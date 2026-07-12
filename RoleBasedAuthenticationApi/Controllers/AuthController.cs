@@ -1,15 +1,15 @@
 ﻿using RoleBasedAuthenticationApi.DTO.Auth;
 using RoleBasedAuthenticationApi.Interfaces;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System.Net;
+
 
 namespace RoleBasedAuthenticationApi.Controllers
 {
     [Route("api/auth")]
     [ApiController]
     [AllowAnonymous]
+    [ProducesErrorResponseType(typeof(ProblemDetails))]
     public class AuthController : ControllerBase 
     {
         private readonly IAuthService _authService;
@@ -20,24 +20,45 @@ namespace RoleBasedAuthenticationApi.Controllers
 
         [HttpPost]
         [Route("register")]
-        public async Task<ActionResult> Register(RegisterDto dto)//Is RESTFUL
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult> Register(RegisterDto dto)
         {
             var result = await _authService.RegisterAsync(dto);
 
-            if (result.IsSuccess is false)
+            if (!result.IsSuccess)
             {
-                return Problem(
-                    statusCode: StatusCodes.Status400BadRequest,
-                    title: "Registration failed",
-                    detail: string.Join(" ", result.Errors)
-                    );
+                return result.Failure switch
+                {
+                    RegisterFailure.DuplicateEmail => Problem(
+                        statusCode: StatusCodes.Status409Conflict,
+                        title: "Duplicate email",
+                        detail: string.Join(", ", result.Errors)
+                    ),
+
+                    RegisterFailure.ValidationFailed => Problem(
+                        statusCode: StatusCodes.Status400BadRequest,
+                        title: "Registration failed",
+                        detail: string.Join(", ", result.Errors)
+                    ),
+
+                    _ => Problem(
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        title: "Unexpected error",
+                        detail: string.Join(", ", result.Errors)
+                    )
+                };
             }
 
-            return StatusCode(StatusCodes.Status201Created);
+            return CreatedAtRoute(routeName: "getuser", routeValues: new { id = result.Id}, value: new {id = result.Id});
         }
 
         [HttpPost]
         [Route("login")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]    
+        [ProducesResponseType(StatusCodes.Status423Locked)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult> Login(LoginDto dto)
         {
             var result = await _authService.LoginAsync(dto);
@@ -68,5 +89,5 @@ namespace RoleBasedAuthenticationApi.Controllers
 
             return Ok(result.Token);
         }
-    }//HTTP STANDARD
+    }
 }

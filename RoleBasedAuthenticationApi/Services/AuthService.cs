@@ -1,13 +1,9 @@
 ﻿using RoleBasedAuthenticationApi.DTO.Auth;
 using RoleBasedAuthenticationApi.Interfaces;
 using RoleBasedAuthenticationApi.Models;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-//using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
-using System.Net;
 using System.Security.Claims;
 using System.Text;
 
@@ -39,14 +35,34 @@ namespace RoleBasedAuthenticationApi.Services
 
             if (!result.Succeeded)
             {
-                return new RegisterResult
+                if (result.Errors.Any(e => e.Code == "DuplicateEmail"))
                 {
-                    IsSuccess = false,
-                    Errors = result.Errors.Where(e => e.Code != "DuplicateUserName").Select(e => e.Description).ToList()
-                };
+                    return new RegisterResult
+                    {
+                        IsSuccess = false,
+                        Failure = RegisterFailure.DuplicateEmail,
+
+                    };
+                }
+
+                if (result.Errors.Any(e => e.Code == "PasswordTooShort"
+                || e.Code == "PasswordRequiresDigit"
+                || e.Code == "PasswordRequiresUpper"))
+                {
+                    return new RegisterResult
+                    {
+                        IsSuccess = false,
+                        Failure = RegisterFailure.ValidationFailed,
+                        Errors = result.Errors.Select(e => e.Description).ToList()
+                    };
+                }
             }
 
-            return new RegisterResult { IsSuccess = true };
+            return new RegisterResult
+            {
+                IsSuccess = true,
+                Id = user.PublicId
+            };
         }
 
 
@@ -65,26 +81,29 @@ namespace RoleBasedAuthenticationApi.Services
 
             var result = await _signInManager.CheckPasswordSignInAsync(user, dto.Password, true);
 
-            if (!result.Succeeded)
-            {
-                return new LoginResult
-                { 
-                    IsSuccess = false,
-                    Failure = LoginResultType.InvalidCredentials 
-                };
-            }
 
             if (result.IsLockedOut)
             {
                 return new LoginResult
-                { 
+                {
                     IsSuccess = false,
                     Failure = LoginResultType.AccountLocked
                 };
             }
 
+            if (!result.Succeeded)
+            {
+                return new LoginResult
+                {
+                    IsSuccess = false,
+                    Failure = LoginResultType.InvalidCredentials
+                };
+            }
+
+
+
             return new LoginResult
-            { 
+            {
                 IsSuccess = true,
                 Token = await GenerateJwtToken(user)
             };
@@ -96,7 +115,7 @@ namespace RoleBasedAuthenticationApi.Services
 
             var credentials = new SigningCredentials(signInKey, SecurityAlgorithms.HmacSha256);
 
-            var roles =  await _userManager.GetRolesAsync(user);
+            var roles = await _userManager.GetRolesAsync(user);
 
             var claims = new List<Claim>()
             {
@@ -105,7 +124,7 @@ namespace RoleBasedAuthenticationApi.Services
                 new Claim(ClaimTypes.Name, user.FullName),
             };
 
-            foreach(var role in roles)
+            foreach (var role in roles)
             {
                 claims.Add(new Claim(ClaimTypes.Role, role));
             }

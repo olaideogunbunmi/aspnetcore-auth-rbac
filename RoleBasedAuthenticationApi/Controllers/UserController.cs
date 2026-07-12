@@ -3,23 +3,18 @@ using RoleBasedAuthenticationApi.DTO.Role;
 using RoleBasedAuthenticationApi.DTO.User;
 using RoleBasedAuthenticationApi.Interfaces;
 using RoleBasedAuthenticationApi.Models;
-using RoleBasedAuthenticationApi.Services;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using System.ComponentModel.DataAnnotations;
-using System.Security.Claims;
 using System.Text.RegularExpressions;
 using static RoleBasedAuthenticationApi.DTO.Claim.AddCLaimResult;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace RoleBasedAuthenticationApi.Controllers
 {
     [Route("api/users")]
     [ApiController]
-    [Authorize]
+    //[Authorize]
+    [AllowAnonymous]
+    [ProducesErrorResponseType(typeof(ProblemDetails))]
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;
@@ -28,17 +23,17 @@ namespace RoleBasedAuthenticationApi.Controllers
             _userService = userService;
         }
 
-        [HttpGet]     //UPDATE ALL SWITCH FALLBACK _ to internal server error
+        [HttpGet]
         public async Task<ActionResult<IEnumerable<UserDetailsDto>>> GetUsers()
         {
             var users = await _userService.GetUsersAsync();
 
             return Ok(users);
-        }//STANDARD
+        }
 
 
         [HttpGet]
-        [Route("{id}")]
+        [Route("{id}", Name = "getuser")]
         public async Task<ActionResult<UserDetailsDto>> GetUser(string id)
         {
             if (string.IsNullOrWhiteSpace(id) || !Regex.IsMatch(id, @"^\d{6}$"))
@@ -62,7 +57,7 @@ namespace RoleBasedAuthenticationApi.Controllers
             }
 
             return Ok(user);
-        }//STANDARD
+        }
 
 
         [HttpPut]
@@ -99,7 +94,7 @@ namespace RoleBasedAuthenticationApi.Controllers
             }
              
             return Ok(updated.User);
-        }//STANDARD
+        }
 
 
         [HttpDelete]
@@ -136,7 +131,7 @@ namespace RoleBasedAuthenticationApi.Controllers
             }
 
             return NoContent();
-        }//STANDARD
+        }
 
 
         [HttpPost]
@@ -179,7 +174,7 @@ namespace RoleBasedAuthenticationApi.Controllers
             }
             
             return NoContent();
-        }//STANDARD
+        }
 
 
         [HttpDelete]
@@ -222,7 +217,7 @@ namespace RoleBasedAuthenticationApi.Controllers
             }
 
             return NoContent();
-        }//STANDARD
+        }
 
 
         [HttpGet]
@@ -250,7 +245,7 @@ namespace RoleBasedAuthenticationApi.Controllers
             }
 
             return Ok(result.Roles);
-        }//STANDARD
+        }
 
 
         [HttpGet]
@@ -279,7 +274,7 @@ namespace RoleBasedAuthenticationApi.Controllers
 
             return Ok(result.Claims);
 
-        }//STANDARD
+        }
 
 
         [HttpPost]
@@ -322,8 +317,7 @@ namespace RoleBasedAuthenticationApi.Controllers
             }
 
             return NoContent();
-
-        }//STANDARD
+        }
 
 
         [HttpDelete]
@@ -376,11 +370,15 @@ namespace RoleBasedAuthenticationApi.Controllers
 
             return NoContent();
 
-        }//STANDARD
+        }
 
 
         [HttpPost]
         [Route("{id}/disable")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult> DisableUser(string id)
         {
             if (string.IsNullOrWhiteSpace(id) || !Regex.IsMatch(id, @"^\d{6}$"))
@@ -413,11 +411,15 @@ namespace RoleBasedAuthenticationApi.Controllers
             }
 
             return NoContent();
-        }//STANDARD
+        }
 
 
         [HttpPost]
         [Route("{id}/enable")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult> EnableUser(string id)
         {
             if (string.IsNullOrWhiteSpace(id) || !Regex.IsMatch(id, @"^\d{6}$"))
@@ -450,6 +452,6 @@ namespace RoleBasedAuthenticationApi.Controllers
             }
 
             return NoContent();
-        }//STANDARD
+        }
     }
 }
