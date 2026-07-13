@@ -12,8 +12,7 @@ namespace RoleBasedAuthenticationApi.Controllers
 {
     [Route("api/users")]
     [ApiController]
-    //[Authorize]
-    [AllowAnonymous]
+    [Authorize]
     [ProducesErrorResponseType(typeof(ProblemDetails))]
     public class UserController : ControllerBase
     {
