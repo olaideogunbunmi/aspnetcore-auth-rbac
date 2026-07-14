@@ -57,7 +57,7 @@ namespace RoleBasedAuthenticationApi.Controllers
 
         [HttpPost]
         [Route("login")]
-        [ProducesResponseType(typeof(LoginResult), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(LoginResponseDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status423Locked)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult> Login(LoginDto dto)
@@ -82,7 +82,7 @@ namespace RoleBasedAuthenticationApi.Controllers
                 };
             }
 
-            return Ok( new { token = result.Token } );
+            return Ok( new LoginResponseDto { Token = result.Token! } );
         }
     }
 }
