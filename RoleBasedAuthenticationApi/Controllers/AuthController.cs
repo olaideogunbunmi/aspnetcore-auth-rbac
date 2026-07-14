@@ -22,6 +22,8 @@ namespace RoleBasedAuthenticationApi.Controllers
         [Route("register")]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult> Register(RegisterDto dto)
         {
             var result = await _authService.RegisterAsync(dto);
@@ -55,8 +57,7 @@ namespace RoleBasedAuthenticationApi.Controllers
 
         [HttpPost]
         [Route("login")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]    
+        [ProducesResponseType(typeof(LoginResult), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status423Locked)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult> Login(LoginDto dto)
@@ -67,27 +68,21 @@ namespace RoleBasedAuthenticationApi.Controllers
             {
                 return result.Failure switch
                 {
-                    LoginResultType.UserNotFound => Problem(
-                    statusCode: StatusCodes.Status404NotFound,
-                    title: "Not Found",
-                    detail: "User cannot be found"
+                    LoginResultType.UserNotFound or LoginResultType.InvalidCredentials => Problem(
+                    statusCode: StatusCodes.Status401Unauthorized,
+                    title: "Authentication failed",
+                    detail: "Incorrect email or password"
                     ),
 
-                    LoginResultType.AccountLocked => Problem(
+                    _ => Problem(
                     statusCode: StatusCodes.Status423Locked,
                     title: "Account suspended",
                     detail: "Your account is temporary locked"
                     ),
-
-                    _ => Problem(
-                    statusCode: StatusCodes.Status401Unauthorized,
-                    title: "Authentication failed",
-                    detail: "Incorrect email or password"
-                    )
                 };
             }
 
-            return Ok(result.Token);
+            return Ok( new { token = result.Token } );
         }
     }
 }

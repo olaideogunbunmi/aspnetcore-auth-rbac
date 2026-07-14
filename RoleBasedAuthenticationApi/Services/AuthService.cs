@@ -41,13 +41,11 @@ namespace RoleBasedAuthenticationApi.Services
                     {
                         IsSuccess = false,
                         Failure = RegisterFailure.DuplicateEmail,
-
+                        Errors = result.Errors.Select(e => e.Description).ToList()
                     };
                 }
 
-                if (result.Errors.Any(e => e.Code == "PasswordTooShort"
-                || e.Code == "PasswordRequiresDigit"
-                || e.Code == "PasswordRequiresUpper"))
+                if (result.Errors.Any(e => e.Code == "PasswordTooShort" || e.Code == "PasswordRequiresDigit" || e.Code == "PasswordRequiresUpper"))
                 {
                     return new RegisterResult
                     {
@@ -99,8 +97,6 @@ namespace RoleBasedAuthenticationApi.Services
                     Failure = LoginResultType.InvalidCredentials
                 };
             }
-
-
 
             return new LoginResult
             {
