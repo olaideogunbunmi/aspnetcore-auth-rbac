@@ -6,11 +6,13 @@
         public AddClaimFailure? Failure { get; init; }
         public List<string> Errors { get; init; } = [];
 
-        public enum AddClaimFailure
-        {
-            UserNotFound,
-            ClaimAlreadyExist,
-            ClaimAddFailed
-        }
+        
+    }
+
+    public enum AddClaimFailure
+    {
+        UserNotFound,
+        ClaimAlreadyExist,
+        ClaimAddFailed
     }
 }

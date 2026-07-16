@@ -2,7 +2,7 @@
 {
     public class DeleteUserResult
     {
-        public bool IsDeleted { get; init; }
+        public bool IsSuccess { get; init; }
         public List<string> Errors { get; init; } = [];
     }
 }

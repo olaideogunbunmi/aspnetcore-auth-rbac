@@ -7,7 +7,6 @@ using RoleBasedAuthenticationApi.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
-using static RoleBasedAuthenticationApi.DTO.Claim.AddCLaimResult;
 
 
 namespace RoleBasedAuthenticationApi.Services
@@ -23,14 +22,17 @@ namespace RoleBasedAuthenticationApi.Services
             _roleManager = roleManager;
             _mapper = mapper;
         }
+
         public async Task<List<UserDetailsDto>> GetUsersAsync()
         {
             return await _mapper.ProjectTo<UserDetailsDto>(_userManager.Users).ToListAsync();
-        }//STANDARD
-        public async Task<UserDetailsDto?> GetUserProfileAsync(string id)  //DONE
+        }
+
+        public async Task<UserDetailsDto?> GetUserProfileAsync(string id)
         {
             return await _mapper.ProjectTo<UserDetailsDto>(_userManager.Users.Where(u => u.PublicId == id)).FirstOrDefaultAsync();
-        }//STANDARD
+        }
+
         public async Task<UpdateUserResult?> UpdateUserAsync(string id, UpdateUserDto dto)
         {
 
@@ -51,7 +53,8 @@ namespace RoleBasedAuthenticationApi.Services
             }
 
             return new UpdateUserResult { IsSuccess = true, User = _mapper.Map<UserDetailsDto>(user) };
-        }//STANDARD
+        }
+
         public async Task<DeleteUserResult?> DeleteUserAsync(string id)
         {
             var user = await _userManager.Users.Where(u => u.PublicId == id).FirstOrDefaultAsync();
@@ -63,32 +66,33 @@ namespace RoleBasedAuthenticationApi.Services
 
             if (!result.Succeeded)
             {
-                return new DeleteUserResult { IsDeleted = false, Errors = result.Errors.Select(e => e.Description).ToList() };
+                return new DeleteUserResult { IsSuccess = false, Errors = result.Errors.Select(e => e.Description).ToList() };
             }
 
-            return new DeleteUserResult { IsDeleted = true };
-        }//STANDARD
+            return new DeleteUserResult { IsSuccess = true };
+        }
+
         public async Task<AssignRoleResult> AssignRoleAsync(string id, AssignRoleDto dto)
         {
             var user = await _userManager.Users.Where(u => u.PublicId == id).FirstOrDefaultAsync();
 
             if (user == null)
-                return new AssignRoleResult { IsAssigned = false, Failure = AssignFailure.UserNotFound };
+                return new AssignRoleResult { IsSuccess = false, Failure = AssignFailure.UserNotFound };
 
             var roleExist = await _roleManager.RoleExistsAsync(dto.Role);
 
             if (!roleExist)
-                return new AssignRoleResult { IsAssigned = false, Failure = AssignFailure.RoleNotFound };
+                return new AssignRoleResult { IsSuccess = false, Failure = AssignFailure.RoleNotFound };
 
             var result = await _userManager.AddToRoleAsync(user, dto.Role);
 
             if (!result.Succeeded)
             {
-                return new AssignRoleResult { Failure = AssignFailure.AssignFailed, IsAssigned = false, Errors = result.Errors.Select(e => e.Description).ToList() };
+                return new AssignRoleResult { Failure = AssignFailure.AssignFailed, IsSuccess = false, Errors = result.Errors.Select(e => e.Description).ToList() };
             }
 
-            return new AssignRoleResult { IsAssigned = true };
-        }//STANDARD
+            return new AssignRoleResult { IsSuccess = true };
+        }
 
         public async Task<UserRoleRemoveResult> RemoveRoleFromUserAsync(string id, string name)
         {
@@ -110,7 +114,7 @@ namespace RoleBasedAuthenticationApi.Services
             }
 
             return new UserRoleRemoveResult { IsSuccess = true };
-        }//STANDARD
+        }
 
         public async Task<GetUserRolesResult> GetUserRolesAsync(string id)
         {
@@ -132,7 +136,7 @@ namespace RoleBasedAuthenticationApi.Services
             {
                 Roles = _mapper.Map<List<RoleDto>>(roles)
             };
-        }//STANDARD
+        }
 
         public async Task<AddCLaimResult> AddUserClaimsAsync(string id, ClaimDto dto)
         {
@@ -173,7 +177,7 @@ namespace RoleBasedAuthenticationApi.Services
             }
 
             return new AddCLaimResult { IsSuccess = true };
-        }//STANDARD
+        }
 
         public async Task<GetUserClaimsResult> GetUserClaimsAsync(string id)
         {
@@ -190,7 +194,7 @@ namespace RoleBasedAuthenticationApi.Services
             {
                 Claims = claim.Select(c => new UserClaimDto { Type = c.Type, Value = c.Value }).ToList(),
             };
-        }//STANDARD
+        }
 
         public async Task<RemoveClaimResult> RemoveUserClaimsAsync(string id, string type, string value)
         {
@@ -230,7 +234,7 @@ namespace RoleBasedAuthenticationApi.Services
             }
 
             return new RemoveClaimResult { IsSuccess = true };
-        }//STANDARD
+        }
 
         public async Task<LockedUserResult> DisableUserAsync(string id)
         {
@@ -286,7 +290,8 @@ namespace RoleBasedAuthenticationApi.Services
                 IsSuccess = true,
             };
 
-        }//STANDARD
+        }
+
         public async Task<UnlockedUserResult> EnableUserAsync(string id)
         {
             var user = await _userManager.Users.Where(u => u.PublicId == id).FirstOrDefaultAsync();
@@ -337,10 +342,6 @@ namespace RoleBasedAuthenticationApi.Services
             {
                 IsSuccess = true
             };
-        }//STANDARD
-
-
-
-
+        }
     }
 }

@@ -11,7 +11,7 @@ namespace RoleBasedAuthenticationApi.DTO.User
 
     public class AssignRoleResult
     {
-        public bool IsAssigned { get; init; }
+        public bool IsSuccess { get; init; }
         public List<string> Errors { get; init; } = [];
         public AssignFailure? Failure { get; init; }
     }

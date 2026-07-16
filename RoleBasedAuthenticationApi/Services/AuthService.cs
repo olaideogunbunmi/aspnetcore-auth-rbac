@@ -116,6 +116,7 @@ namespace RoleBasedAuthenticationApi.Services
             var claims = new List<Claim>()
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.PublicId.ToString()),
+                //new Claim(ClaimTypes.NameIdentifier, user.PublicId.ToString()), //for .NET
                 new Claim(ClaimTypes.Email, user.Email!),
                 new Claim(ClaimTypes.Name, user.FullName),
             };

@@ -55,6 +55,7 @@ namespace RoleBasedAuthenticationApi.Controllers
             return CreatedAtRoute(routeName: "getuser", routeValues: new { id = result.Id}, value: new {id = result.Id});
         }
 
+
         [HttpPost]
         [Route("login")]
         [ProducesResponseType(typeof(LoginResponseDto), StatusCodes.Status200OK)]
