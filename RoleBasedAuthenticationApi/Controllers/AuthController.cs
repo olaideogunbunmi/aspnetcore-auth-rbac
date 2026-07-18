@@ -10,7 +10,7 @@ namespace RoleBasedAuthenticationApi.Controllers
     [ApiController]
     [AllowAnonymous]
     [ProducesErrorResponseType(typeof(ProblemDetails))]
-    public class AuthController : ControllerBase 
+    public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
         public AuthController(IAuthService authService)
@@ -20,11 +20,12 @@ namespace RoleBasedAuthenticationApi.Controllers
 
         [HttpPost]
         [Route("register")]
-        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(UserRegisteredDto), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status409Conflict)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult> Register(RegisterDto dto)
+        [ProducesResponseType(typeof(UserRegisteredDto), StatusCodes.Status201Created)]
+        public async Task<ActionResult<UserRegisteredDto>> Register(RegisterDto dto)
         {
             var result = await _authService.RegisterAsync(dto);
 
@@ -52,7 +53,7 @@ namespace RoleBasedAuthenticationApi.Controllers
                 };
             }
 
-            return CreatedAtRoute(routeName: "getuser", routeValues: new { id = result.Id}, value: new {id = result.Id});
+            return CreatedAtRoute(routeName: "getuser", routeValues: new { id = result.User!.Id }, value: result.User);
         }
 
 
@@ -61,7 +62,7 @@ namespace RoleBasedAuthenticationApi.Controllers
         [ProducesResponseType(typeof(LoginResponseDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status423Locked)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<ActionResult> Login(LoginDto dto)
+        public async Task<ActionResult<LoginResponseDto>> Login(LoginDto dto)
         {
             var result = await _authService.LoginAsync(dto);
 
@@ -75,15 +76,21 @@ namespace RoleBasedAuthenticationApi.Controllers
                     detail: "Incorrect email or password"
                     ),
 
-                    _ => Problem(
+                    LoginResultType.AccountLocked => Problem(
                     statusCode: StatusCodes.Status423Locked,
                     title: "Account suspended",
-                    detail: "Your account is temporary locked"
+                    detail: "Your account is temporarily locked"
                     ),
+
+                    _ => Problem(
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        title: "Unexpected error",
+                        detail: "An unexpected error occurred"
+                        )
                 };
             }
 
-            return Ok( new LoginResponseDto { Token = result.Token! } );
+            return Ok(new LoginResponseDto { Token = result.Token! });
         }
     }
 }

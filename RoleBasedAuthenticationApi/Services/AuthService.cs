@@ -54,12 +54,24 @@ namespace RoleBasedAuthenticationApi.Services
                         Errors = result.Errors.Select(e => e.Description).ToList()
                     };
                 }
+
+                return new RegisterResult
+                {
+                    IsSuccess = false,
+                    Failure = RegisterFailure.UnexpectedError,
+                    Errors = result.Errors.Select(e => e.Description).ToList()
+                };
             }
 
             return new RegisterResult
             {
                 IsSuccess = true,
-                Id = user.PublicId
+                User = new UserRegisteredDto
+                {
+                    Id = user.PublicId,
+                    Name = user.FullName,
+                    Email = user.Email
+                }
             };
         }
 

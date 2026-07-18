@@ -36,6 +36,7 @@ namespace RoleBasedAuthenticationApi.Controllers
 
         [HttpGet]
         [Route("{id}", Name = "getuser")]
+        [Authorize(Roles = "Admin")]
         [ProducesResponseType(typeof(UserDetailsDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -67,6 +68,7 @@ namespace RoleBasedAuthenticationApi.Controllers
 
         [HttpPut]
         [Route("{id}")]
+        
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -110,6 +112,7 @@ namespace RoleBasedAuthenticationApi.Controllers
 
         [HttpDelete]
         [Route("{id}")]
+        [Authorize(Roles = "Admin")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -153,6 +156,7 @@ namespace RoleBasedAuthenticationApi.Controllers
 
         [HttpPost]
         [Route("{id}/roles")]
+        [Authorize(Roles = "Admin")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]

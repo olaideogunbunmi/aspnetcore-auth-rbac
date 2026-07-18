@@ -6,9 +6,9 @@ namespace RoleBasedAuthenticationApi.Models
     public class ApplicationUser : IdentityUser 
     {
         [PersonalData]
-        public string PublicId { get; set; }
-        public string FullName { get; set; }
-        public DateTime CreatedDate { get; set; }
+        public string PublicId { get; init; }
+        public string FullName { get; init; }
+        public DateTime CreatedDate { get; init; }
     }
 }
 

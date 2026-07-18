@@ -1,11 +1,11 @@
 ﻿using AutoMapper;
 using RoleBasedAuthenticationApi.DTO.Role;
-using RoleBasedAuthenticationApi.DTO.User;
 using RoleBasedAuthenticationApi.Interfaces;
 using RoleBasedAuthenticationApi.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.EntityFrameworkCore;
+
 
 namespace RoleBasedAuthenticationApi.Services
 {
@@ -21,7 +21,7 @@ namespace RoleBasedAuthenticationApi.Services
             _mapper = mapper;
 
         }
-        //USE automapper         //USE AsNoTracking
+        
         public async Task<CreateRoleResult> CreateRoleAsync(CreateRoleDto dto)
         {
             var roleExist = await _roleManager.RoleExistsAsync(dto.Name);
@@ -51,19 +51,20 @@ namespace RoleBasedAuthenticationApi.Services
             return new CreateRoleResult
             {
                 IsSuccess = true,
+                Name = dto.Name
             };
-        }//STANDARD
+        }
 
         public async Task<IEnumerable<RoleDto>> GetRolesAsync()
         {
             return await _mapper.ProjectTo<RoleDto>(_roleManager.Roles).ToListAsync();
-        }//STANDARD
+        }
 
         public async Task<RoleDto?> GetRoleByNameAsync(string name)
         {
             return await _mapper.ProjectTo<RoleDto>(_roleManager.Roles.Where(r => r.Name == name)).FirstOrDefaultAsync();
 
-        }//STANDRAD
+        }
 
         public async Task<UpdateRoleResult> UpdateRoleAsync(string name, JsonPatchDocument<UpdateRoleDto> dto)
         {
@@ -101,7 +102,7 @@ namespace RoleBasedAuthenticationApi.Services
                 IsSuccess = true,
             };
 
-        }//STANDARD
+        }
 
         public async Task<DeleteRoleResult> DeleteRoleAsync(string name)
         {
@@ -133,7 +134,7 @@ namespace RoleBasedAuthenticationApi.Services
                 IsSuccess = true 
             };
 
-        }//STANDARD
+        }
 
         public async Task<UsersRetrieveResult> GetRoleUsersAsync(string name)
         {
@@ -156,6 +157,6 @@ namespace RoleBasedAuthenticationApi.Services
                 IsSuccess = true
             };
 
-        }//STANDARD
+        }
     }
 }

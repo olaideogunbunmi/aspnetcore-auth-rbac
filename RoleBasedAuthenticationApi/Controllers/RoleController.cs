@@ -1,18 +1,17 @@
 ﻿using RoleBasedAuthenticationApi.DTO.Role;
-using RoleBasedAuthenticationApi.DTO.User;
 using RoleBasedAuthenticationApi.Interfaces;
 using RoleBasedAuthenticationApi.Models;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
-using System.Data;
+
 
 namespace RoleBasedAuthenticationApi.Controllers
 {
     [Route("api/roles")]
     [ApiController]
     [Authorize]
+    [ProducesErrorResponseType(typeof(ProblemDetails))]
     public class RoleController : ControllerBase
     {
         private readonly IRoleService _roleService;
@@ -21,8 +20,15 @@ namespace RoleBasedAuthenticationApi.Controllers
             _roleService = roleService;
         }
 
+
         [HttpPost]
-        public async Task<ActionResult> CreateRole(CreateRoleDto dto)
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(typeof(RoleCreatedDto), StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<ActionResult<RoleCreatedDto>> CreateRole(CreateRoleDto dto)
         {
             var result = await _roleService.CreateRoleAsync(dto);
 
@@ -44,21 +50,28 @@ namespace RoleBasedAuthenticationApi.Controllers
                 };
             }
 
-            return Created();
-        }//STANDARD
+            return CreatedAtRoute(routeName: "getRole", routeValues: new {name = result.Name }, value: new RoleCreatedDto { RoleName = result.Name!});
+        }
 
 
         [HttpGet]
+        [ProducesResponseType(typeof(RoleDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult<IEnumerable<RoleDto>>> GetAllRoles()
         {
             var roles = await _roleService.GetRolesAsync();
 
             return Ok(roles);
-        }//STANDARD
+        }
 
 
         [HttpGet]
-        [Route("{name:alpha}")]
+        [Route("{name}", Name = "getRole")]
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(typeof(RoleDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<ActionResult<RoleDto>> GetRole(string name)
         {
             var result = await _roleService.GetRoleByNameAsync(name);
@@ -74,12 +87,12 @@ namespace RoleBasedAuthenticationApi.Controllers
 
             return Ok(result);
 
-        }//STANDARD
+        }
 
 
         [HttpPatch]
         [Route("{name}")]
-        public async Task<ActionResult> UpdateRole(string name, JsonPatchDocument<UpdateRoleDto> dto) //change to patchDocu
+        public async Task<ActionResult> UpdateRole(string name, JsonPatchDocument<UpdateRoleDto> patchDocument) //change to patchDocu
         {
             if (string.IsNullOrWhiteSpace(name))
             {
@@ -90,7 +103,7 @@ namespace RoleBasedAuthenticationApi.Controllers
                     );
             }
 
-            if (dto is null)
+            if (patchDocument is null)
             {
                 return Problem(
                     statusCode: StatusCodes.Status400BadRequest,
@@ -99,7 +112,7 @@ namespace RoleBasedAuthenticationApi.Controllers
                     );
             }
 
-            var result = await _roleService.UpdateRoleAsync(name, dto);
+            var result = await _roleService.UpdateRoleAsync(name, patchDocument);
 
             if (!result.IsSuccess)
             {
@@ -120,7 +133,7 @@ namespace RoleBasedAuthenticationApi.Controllers
             }
 
             return NoContent();
-        }//STANDARD
+        }
 
 
         [HttpDelete]
@@ -157,7 +170,7 @@ namespace RoleBasedAuthenticationApi.Controllers
             }
 
             return NoContent();
-        }//STANDARD
+        }
 
 
         [HttpGet]
@@ -166,7 +179,7 @@ namespace RoleBasedAuthenticationApi.Controllers
         {
             var result = await _roleService.GetRoleUsersAsync(name);
 
-            if(result.IsSuccess is false)
+            if (result.IsSuccess is false)
             {
                 return Problem(
                     statusCode: StatusCodes.Status404NotFound,
@@ -176,6 +189,6 @@ namespace RoleBasedAuthenticationApi.Controllers
             }
 
             return Ok(result.Users);
-        }//STANDARD
+        }
     }
 }
