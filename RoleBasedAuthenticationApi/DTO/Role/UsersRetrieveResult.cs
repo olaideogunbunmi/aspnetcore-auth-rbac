@@ -10,6 +10,7 @@ namespace RoleBasedAuthenticationApi.DTO.Role
 
         public List<UserDetailsDto> Users { get; init; } = [];
     }
+
     public enum RetrieveFailure
     {
         RoleNotFound

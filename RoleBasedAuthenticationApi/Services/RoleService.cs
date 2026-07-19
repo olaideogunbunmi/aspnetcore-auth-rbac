@@ -21,7 +21,7 @@ namespace RoleBasedAuthenticationApi.Services
             _mapper = mapper;
 
         }
-        
+
         public async Task<CreateRoleResult> CreateRoleAsync(CreateRoleDto dto)
         {
             var roleExist = await _roleManager.RoleExistsAsync(dto.Name);
@@ -63,10 +63,9 @@ namespace RoleBasedAuthenticationApi.Services
         public async Task<RoleDto?> GetRoleByNameAsync(string name)
         {
             return await _mapper.ProjectTo<RoleDto>(_roleManager.Roles.Where(r => r.Name == name)).FirstOrDefaultAsync();
-
         }
 
-        public async Task<UpdateRoleResult> UpdateRoleAsync(string name, JsonPatchDocument<UpdateRoleDto> dto)
+        public async Task<UpdateRoleResult> UpdateRoleAsync(string name, JsonPatchDocument<UpdateRoleDto> patchDocument)
         {
             var role = await _roleManager.FindByNameAsync(name);
 
@@ -81,7 +80,16 @@ namespace RoleBasedAuthenticationApi.Services
 
             var roleDto = _mapper.Map<UpdateRoleDto>(role);
 
-            dto.ApplyTo(roleDto);
+            patchDocument.ApplyTo(roleDto);
+
+            if (roleDto.NewName == role.Name)
+            {
+                return new UpdateRoleResult
+                {
+                    IsSuccess = false,
+                    Failure = UpdateFailure.DuplicateName
+                };
+            }
 
             role.Name = roleDto.NewName;
 
@@ -89,12 +97,22 @@ namespace RoleBasedAuthenticationApi.Services
 
             if (!result.Succeeded)
             {
+                if (result.Errors.Any(e => e.Code == "DuplicateRoleName"))
+                {
+                    return new UpdateRoleResult
+                    {
+                        IsSuccess = false,
+                        Failure = UpdateFailure.DuplicateName,
+                        Errors = result.Errors.Select(e => e.Description).ToList()
+                    };
+                }
+
                 return new UpdateRoleResult
                 {
                     IsSuccess = false,
-                    Failure = UpdateFailure.RoleUpdateFailed,
                     Errors = result.Errors.Select(e => e.Description).ToList()
                 };
+
             }
 
             return new UpdateRoleResult
@@ -125,13 +143,13 @@ namespace RoleBasedAuthenticationApi.Services
                 {
                     IsSuccess = false,
                     Failure = DeleteRoleFailure.DeleteFailed,
-                    Errors = result.Errors.Select(e => e.Description).ToList()            
+                    Errors = result.Errors.Select(e => e.Description).ToList()
                 };
             }
 
-            return new DeleteRoleResult 
+            return new DeleteRoleResult
             {
-                IsSuccess = true 
+                IsSuccess = true
             };
 
         }
@@ -156,7 +174,6 @@ namespace RoleBasedAuthenticationApi.Services
                 Users = _mapper.Map<List<UserDetailsDto>>(users),
                 IsSuccess = true
             };
-
         }
     }
 }

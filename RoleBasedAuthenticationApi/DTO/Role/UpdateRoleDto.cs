@@ -18,6 +18,7 @@ namespace RoleBasedAuthenticationApi.DTO.Role
     public enum UpdateFailure
     {
         NotFound,
+        DuplicateName,
         RoleUpdateFailed
     }
 }

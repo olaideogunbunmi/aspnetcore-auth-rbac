@@ -55,7 +55,7 @@ namespace RoleBasedAuthenticationApi.Controllers
 
 
         [HttpGet]
-        [ProducesResponseType(typeof(RoleDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(IEnumerable<RoleDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult<IEnumerable<RoleDto>>> GetAllRoles()
         {
@@ -92,7 +92,15 @@ namespace RoleBasedAuthenticationApi.Controllers
 
         [HttpPatch]
         [Route("{name}")]
-        public async Task<ActionResult> UpdateRole(string name, JsonPatchDocument<UpdateRoleDto> patchDocument) //change to patchDocu
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult> UpdateRole(string name, JsonPatchDocument<UpdateRoleDto> patchDocument)
         {
             if (string.IsNullOrWhiteSpace(name))
             {
@@ -123,6 +131,11 @@ namespace RoleBasedAuthenticationApi.Controllers
                         title: "Role Not Found",
                         detail: "The Role does not exist"
                         ),
+                    UpdateFailure.DuplicateName => Problem(
+                        statusCode: StatusCodes.Status409Conflict,
+                        title: "Duplicate role name",
+                        detail: "A role with that name already exists"
+                        ),
 
                     _ => Problem(
                         statusCode: StatusCodes.Status500InternalServerError,
@@ -138,6 +151,13 @@ namespace RoleBasedAuthenticationApi.Controllers
 
         [HttpDelete]
         [Route("{name}")]
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult> DeleteRole(string name)
         {
             if (string.IsNullOrWhiteSpace(name))
@@ -175,11 +195,26 @@ namespace RoleBasedAuthenticationApi.Controllers
 
         [HttpGet]
         [Route("{name}/users")]
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(typeof(IEnumerable<UserDetailsDto>),StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<ActionResult<IEnumerable<UserDetailsDto>>> GetRoleUsers(string name)
         {
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                return Problem(
+                    statusCode: StatusCodes.Status400BadRequest,
+                    title: "Invalid input",
+                    detail: "Valid role name must be provided"
+                    );
+            }
+
             var result = await _roleService.GetRoleUsersAsync(name);
 
-            if (result.IsSuccess is false)
+            if (!result.IsSuccess)
             {
                 return Problem(
                     statusCode: StatusCodes.Status404NotFound,
