@@ -21,6 +21,7 @@ namespace RoleBasedAuthenticationApi.Controllers
             _userService = userService;
         }
 
+
         [HttpGet]
         [Authorize(Roles = "Admin")]
         [ProducesResponseType(typeof(IEnumerable<UserDetailsDto>), StatusCodes.Status200OK)]
@@ -39,6 +40,8 @@ namespace RoleBasedAuthenticationApi.Controllers
         [Authorize(Roles = "Admin")]
         [ProducesResponseType(typeof(UserDetailsDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<UserDetailsDto>> GetUser(string id)
         {
@@ -68,13 +71,13 @@ namespace RoleBasedAuthenticationApi.Controllers
 
         [HttpPut]
         [Route("{id}")]
-        
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(typeof(UserDetailsDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<UserDetailsDto>> UpdateUser(string id, UpdateUserDto dto)
         {
             if (string.IsNullOrWhiteSpace(id) || !Regex.IsMatch(id, @"^\d{6}$"))
@@ -93,7 +96,7 @@ namespace RoleBasedAuthenticationApi.Controllers
                 return Problem(
                     statusCode: StatusCodes.Status404NotFound,
                     title: "Not Found",
-                    detail: "User ID cannot be found"
+                    detail: "User not found"
                     );
             }
 
@@ -116,9 +119,9 @@ namespace RoleBasedAuthenticationApi.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult> DeleteUser(string id)
         {
             if (string.IsNullOrWhiteSpace(id) || !Regex.IsMatch(id, @"^\d{6}$"))
@@ -137,7 +140,7 @@ namespace RoleBasedAuthenticationApi.Controllers
                 return Problem(
                     statusCode: StatusCodes.Status404NotFound,
                     title: "Not Found",
-                    detail: "User ID cannot be found"
+                    detail: "User not found"
                     );
             }
 
@@ -206,6 +209,13 @@ namespace RoleBasedAuthenticationApi.Controllers
 
         [HttpDelete]
         [Route("{id}/roles/{roleName}")]
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult> RemoveRole(string id, string roleName)
         {
             if (string.IsNullOrWhiteSpace(id) || !Regex.IsMatch(id, @"^\d{6}$"))
@@ -235,7 +245,13 @@ namespace RoleBasedAuthenticationApi.Controllers
                         detail: "The role cannot be found"
                         ),
 
-                     _ => Problem(
+                    RemoveFailure.UserNotInRole => Problem(
+                            statusCode: StatusCodes.Status404NotFound,
+                            title: "Not found",
+                            detail: "The user is not assigned to this role"
+                        ),
+
+                    _ => Problem(
                         statusCode: StatusCodes.Status500InternalServerError,
                         title: "Role removal failed",
                         detail: string.Join(", ", result.Errors)
@@ -249,7 +265,14 @@ namespace RoleBasedAuthenticationApi.Controllers
 
         [HttpGet]
         [Route("{id}/roles")]
-        public async Task<ActionResult<IEnumerable<RoleDto>>> GetUserRoles(string id)
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(typeof(IEnumerable<string>),StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<IEnumerable<string>>> GetUserRoles(string id)
         {
             if (string.IsNullOrWhiteSpace(id) || !Regex.IsMatch(id, @"^\d{6}$"))
             {
@@ -275,37 +298,16 @@ namespace RoleBasedAuthenticationApi.Controllers
         }
 
 
-        [HttpGet]
-        [Route("{id}/claims")]
-        public async Task<ActionResult<IEnumerable<UserClaimDto>>> GetUserClaim(string id)
-        {
-            if (string.IsNullOrWhiteSpace(id) || !Regex.IsMatch(id, @"^\d{6}$"))
-            {
-                return Problem(
-                    statusCode: StatusCodes.Status400BadRequest,
-                    title: "Invalid input format",
-                    detail: "The user ID must be exactly 6 digits. Letters or symbols are not allowed"
-                    );
-            }
-
-            var result = await _userService.GetUserClaimsAsync(id);
-
-            if (result.UserNotFound)
-            {
-                return Problem(
-                    statusCode: StatusCodes.Status404NotFound,
-                    title: "Not Found",
-                    detail: "User not found"
-                    );
-            }
-
-            return Ok(result.Claims);
-
-        }
-
 
         [HttpPost]
         [Route("{id}/claims")]
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult> AddClaims(string id, ClaimDto dto)
         {
             if (string.IsNullOrWhiteSpace(id) || !Regex.IsMatch(id, @"^\d{6}$"))
@@ -345,6 +347,37 @@ namespace RoleBasedAuthenticationApi.Controllers
 
             return NoContent();
         }
+
+
+
+        [HttpGet]
+        [Route("{id}/claims")]
+        public async Task<ActionResult<IEnumerable<UserClaimDto>>> GetUserClaim(string id)
+        {
+            if (string.IsNullOrWhiteSpace(id) || !Regex.IsMatch(id, @"^\d{6}$"))
+            {
+                return Problem(
+                    statusCode: StatusCodes.Status400BadRequest,
+                    title: "Invalid input format",
+                    detail: "The user ID must be exactly 6 digits. Letters or symbols are not allowed"
+                    );
+            }
+
+            var result = await _userService.GetUserClaimsAsync(id);
+
+            if (result.UserNotFound)
+            {
+                return Problem(
+                    statusCode: StatusCodes.Status404NotFound,
+                    title: "Not Found",
+                    detail: "User not found"
+                    );
+            }
+
+            return Ok(result.Claims);
+
+        }
+
 
 
         [HttpDelete]

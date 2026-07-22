@@ -82,7 +82,7 @@ namespace RoleBasedAuthenticationApi.Services
 
             patchDocument.ApplyTo(roleDto);
 
-            if (string.Equals(roleDto.NewName, role.Name,StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(roleDto.NewName, role.Name, StringComparison.OrdinalIgnoreCase))
             {
                 return new UpdateRoleResult
                 {

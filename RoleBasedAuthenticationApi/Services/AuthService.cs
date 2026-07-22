@@ -156,7 +156,7 @@ namespace RoleBasedAuthenticationApi.Services
 
         public static void RefreshToken()
         {
-            //important
+            //important due to expiration of generated token
         }
 
         public static void Logout()

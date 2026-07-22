@@ -12,6 +12,7 @@ namespace RoleBasedAuthenticationApi.DTO.User
     {
         UserNotFound,
         RoleNotFound,
-        RemoveFailed
+        RemoveFailed,
+        UserNotInRole
     }
 }
