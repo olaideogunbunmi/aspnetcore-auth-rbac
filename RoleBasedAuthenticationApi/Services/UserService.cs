@@ -248,14 +248,17 @@ namespace RoleBasedAuthenticationApi.Services
 
             if (user == null)
             {
-                return new GetUserClaimsResult { UserNotFound = true };
+                return new GetUserClaimsResult
+                { 
+                    UserNotFound = true
+                };
             }
 
             var claim = await _userManager.GetClaimsAsync(user);
 
             return new GetUserClaimsResult
             {
-                Claims = claim.Select(c => new UserClaimDto { Type = c.Type, Value = c.Value }).ToList(),
+                Claims = claim.Select(c => new UserClaimDto { Type = c.Type, Value = c.Value }).ToList()
             };
         }
 
@@ -335,7 +338,7 @@ namespace RoleBasedAuthenticationApi.Services
                 };
             }
 
-            //This changes the user's secret key in the database, invalidating existing auth cookies or tokens on their next API request.
+            // it invalidates any previously issued JWT tokens 
 
             var stampResult = await _userManager.UpdateSecurityStampAsync(user);
 

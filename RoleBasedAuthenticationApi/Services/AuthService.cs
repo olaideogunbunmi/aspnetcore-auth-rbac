@@ -94,6 +94,13 @@ namespace RoleBasedAuthenticationApi.Services
 
             if (result.IsLockedOut)
             {
+                var lockOut = await _userManager.GetLockoutEndDateAsync(user);
+
+                if (lockOut.HasValue && lockOut.Value < DateTimeOffset.MaxValue)
+                {
+                    await _userManager.SetLockoutEndDateAsync(user, DateTimeOffset.MaxValue);
+                }
+
                 return new LoginResult
                 {
                     IsSuccess = false,
@@ -129,6 +136,9 @@ namespace RoleBasedAuthenticationApi.Services
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.PublicId.ToString()),
                 //new Claim(ClaimTypes.NameIdentifier, user.PublicId.ToString()), //for .NET
+
+                //prevent tokens having same payload and signature - though nearly impossble for same signature to be generated
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),         
                 new Claim(ClaimTypes.Email, user.Email!),
                 new Claim(ClaimTypes.Name, user.FullName),
             };
@@ -143,20 +153,27 @@ namespace RoleBasedAuthenticationApi.Services
 
             claims.AddRange(customClaim);
 
-            var token = new JwtSecurityToken(
-                issuer: _configuration["JWT:Issuer"],
-                audience: _configuration["JWT:Audience"],
-                claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(10),
-                signingCredentials: credentials
-                );
+            var tokenHandler = new JwtSecurityTokenHandler();
 
-            return new JwtSecurityTokenHandler().WriteToken(token);
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Issuer = _configuration["JWT:Issuer"],
+                Audience = _configuration["JWT:Audience"],
+                Subject = new ClaimsIdentity(claims),
+                IssuedAt = DateTime.UtcNow,
+                NotBefore = DateTime.UtcNow,
+                Expires = DateTime.UtcNow.AddMinutes(10),
+                SigningCredentials = credentials
+            };
+
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            return tokenHandler.WriteToken(token);
         }
 
         public static void RefreshToken()
         {
             //important due to expiration of generated token
+            //give it a revoke flag, in case of locked account so it won;t give it refresh token while access token dies off - revocation
         }
 
         public static void Logout()

@@ -12,6 +12,8 @@ namespace RoleBasedAuthenticationApi.Controllers
     [ApiController]
     [Authorize]
     [ProducesErrorResponseType(typeof(ProblemDetails))]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public class RoleController : ControllerBase
     {
         private readonly IRoleService _roleService;
@@ -25,8 +27,6 @@ namespace RoleBasedAuthenticationApi.Controllers
         [Authorize(Roles = "Admin")]
         [ProducesResponseType(typeof(RoleCreatedDto), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status409Conflict)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<ActionResult<RoleCreatedDto>> CreateRole(CreateRoleDto dto)
         {
@@ -56,7 +56,6 @@ namespace RoleBasedAuthenticationApi.Controllers
 
         [HttpGet]
         [ProducesResponseType(typeof(IEnumerable<RoleDto>), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult<IEnumerable<RoleDto>>> GetAllRoles()
         {
             var roles = await _roleService.GetRolesAsync();
@@ -70,7 +69,6 @@ namespace RoleBasedAuthenticationApi.Controllers
         [Authorize(Roles = "Admin")]
         [ProducesResponseType(typeof(RoleDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<ActionResult<RoleDto>> GetRole(string name)
         {
@@ -97,9 +95,7 @@ namespace RoleBasedAuthenticationApi.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status409Conflict)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult> UpdateRole(string name, JsonPatchDocument<UpdateRoleDto> patchDocument)
         {
             if (string.IsNullOrWhiteSpace(name))
@@ -155,9 +151,7 @@ namespace RoleBasedAuthenticationApi.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult> DeleteRole(string name)
         {
             if (string.IsNullOrWhiteSpace(name))
@@ -199,7 +193,6 @@ namespace RoleBasedAuthenticationApi.Controllers
         [ProducesResponseType(typeof(IEnumerable<UserDetailsDto>),StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<ActionResult<IEnumerable<UserDetailsDto>>> GetRoleUsers(string name)
         {

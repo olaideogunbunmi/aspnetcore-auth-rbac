@@ -13,6 +13,8 @@ namespace RoleBasedAuthenticationApi.Controllers
     [ApiController]
     [Authorize]
     [ProducesErrorResponseType(typeof(ProblemDetails))]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;
@@ -26,7 +28,7 @@ namespace RoleBasedAuthenticationApi.Controllers
         [Authorize(Roles = "Admin")]
         [ProducesResponseType(typeof(IEnumerable<UserDetailsDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+
         public async Task<ActionResult<IEnumerable<UserDetailsDto>>> GetUsers()
         {
             var users = await _userService.GetUsersAsync();
@@ -39,10 +41,9 @@ namespace RoleBasedAuthenticationApi.Controllers
         [Route("{id}", Name = "getuser")]
         [Authorize(Roles = "Admin")]
         [ProducesResponseType(typeof(UserDetailsDto), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<ActionResult<UserDetailsDto>> GetUser(string id)
         {
             if (string.IsNullOrWhiteSpace(id) || !Regex.IsMatch(id, @"^\d{6}$"))
@@ -75,9 +76,7 @@ namespace RoleBasedAuthenticationApi.Controllers
         [ProducesResponseType(typeof(UserDetailsDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<UserDetailsDto>> UpdateUser(string id, UpdateUserDto dto)
         {
             if (string.IsNullOrWhiteSpace(id) || !Regex.IsMatch(id, @"^\d{6}$"))
@@ -119,9 +118,7 @@ namespace RoleBasedAuthenticationApi.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult> DeleteUser(string id)
         {
             if (string.IsNullOrWhiteSpace(id) || !Regex.IsMatch(id, @"^\d{6}$"))
@@ -163,9 +160,7 @@ namespace RoleBasedAuthenticationApi.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult> AssignRole(string id, AssignRoleDto dto) 
         {
             if (string.IsNullOrWhiteSpace(id) || !Regex.IsMatch(id, @"^\d{6}$"))
@@ -213,9 +208,7 @@ namespace RoleBasedAuthenticationApi.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult> RemoveRole(string id, string roleName)
         {
             if (string.IsNullOrWhiteSpace(id) || !Regex.IsMatch(id, @"^\d{6}$"))
@@ -269,9 +262,7 @@ namespace RoleBasedAuthenticationApi.Controllers
         [ProducesResponseType(typeof(IEnumerable<string>),StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<IEnumerable<string>>> GetUserRoles(string id)
         {
             if (string.IsNullOrWhiteSpace(id) || !Regex.IsMatch(id, @"^\d{6}$"))
@@ -305,9 +296,7 @@ namespace RoleBasedAuthenticationApi.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult> AddClaims(string id, ClaimDto dto)
         {
             if (string.IsNullOrWhiteSpace(id) || !Regex.IsMatch(id, @"^\d{6}$"))
@@ -349,9 +338,13 @@ namespace RoleBasedAuthenticationApi.Controllers
         }
 
 
-
         [HttpGet]
         [Route("{id}/claims")]
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(typeof(IEnumerable<UserClaimDto>),StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<ActionResult<IEnumerable<UserClaimDto>>> GetUserClaim(string id)
         {
             if (string.IsNullOrWhiteSpace(id) || !Regex.IsMatch(id, @"^\d{6}$"))
@@ -379,9 +372,12 @@ namespace RoleBasedAuthenticationApi.Controllers
         }
 
 
-
         [HttpDelete]
         [Route("{id}/claims/{type}/{value}")]
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<ActionResult> RemoveClaims(string id, string type, string value)
         {
             if (string.IsNullOrWhiteSpace(id) || !Regex.IsMatch(id, @"^\d{6}$"))
@@ -435,10 +431,11 @@ namespace RoleBasedAuthenticationApi.Controllers
 
         [HttpPost]
         [Route("{id}/disable")]
+        [Authorize(Roles = "Admin")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult> DisableUser(string id)
         {
             if (string.IsNullOrWhiteSpace(id) || !Regex.IsMatch(id, @"^\d{6}$"))
@@ -476,10 +473,11 @@ namespace RoleBasedAuthenticationApi.Controllers
 
         [HttpPost]
         [Route("{id}/enable")]
+        [Authorize(Roles = "Admin")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<ActionResult> EnableUser(string id)
         {
             if (string.IsNullOrWhiteSpace(id) || !Regex.IsMatch(id, @"^\d{6}$"))

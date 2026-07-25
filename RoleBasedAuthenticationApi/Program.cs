@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using System.Text.Json.Serialization;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,8 +27,13 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
     {
         options.Lockout.AllowedForNewUsers = true;
+
+        //users can only attempt 5 times of login using wrong credentials
         options.Lockout.MaxFailedAccessAttempts = 5;
+
+        //designed for temporary lockout - after 10 minutes user can try again
         options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(10);
+
 
 
         options.Password.RequireDigit = true;
@@ -58,6 +63,9 @@ builder.Services.AddAuthentication(option =>
     {
         ValidateIssuerSigningKey = true,
         ValidateLifetime = true,
+
+        //no extra 5 minutes time added to token lifespan after creation
+        ClockSkew = TimeSpan.Zero, //or TimeSpan.FromSeconds(0)
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JWT:Key"]!)),
         ValidateIssuer = true,
         ValidateAudience = true,

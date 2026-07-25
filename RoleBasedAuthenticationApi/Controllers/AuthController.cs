@@ -10,6 +10,7 @@ namespace RoleBasedAuthenticationApi.Controllers
     [ApiController]
     [AllowAnonymous]
     [ProducesErrorResponseType(typeof(ProblemDetails))]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
@@ -23,8 +24,6 @@ namespace RoleBasedAuthenticationApi.Controllers
         [ProducesResponseType(typeof(UserRegisteredDto), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status409Conflict)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        [ProducesResponseType(typeof(UserRegisteredDto), StatusCodes.Status201Created)]
         public async Task<ActionResult<UserRegisteredDto>> Register(RegisterDto dto)
         {
             var result = await _authService.RegisterAsync(dto);
@@ -53,7 +52,10 @@ namespace RoleBasedAuthenticationApi.Controllers
                 };
             }
 
-            return CreatedAtRoute(routeName: "getuser", routeValues: new { id = result.User!.Id }, value: result.User);
+            return CreatedAtRoute(
+                routeName: "getuser", 
+                routeValues: new { id = result.User!.Id }, 
+                value: result.User);
         }
 
 
@@ -79,7 +81,7 @@ namespace RoleBasedAuthenticationApi.Controllers
                     LoginResultType.AccountLocked => Problem(
                     statusCode: StatusCodes.Status423Locked,
                     title: "Account suspended",
-                    detail: "Your account is temporarily locked"
+                    detail: "Your account has been locked due to multiple failed login attempts."
                     ),
 
                     _ => Problem(
@@ -90,7 +92,10 @@ namespace RoleBasedAuthenticationApi.Controllers
                 };
             }
 
-            return Ok(new LoginResponseDto { Token = result.Token! });
+            return Ok( new LoginResponseDto 
+            { 
+                Token = result.Token! 
+            });
         }
     }
 }
