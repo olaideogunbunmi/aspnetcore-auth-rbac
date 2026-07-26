@@ -2,7 +2,6 @@
 using RoleBasedAuthenticationApi.DTO.Role;
 using RoleBasedAuthenticationApi.DTO.User;
 using RoleBasedAuthenticationApi.Models;
-using System.Security.Claims;
 
 namespace RoleBasedAuthenticationApi.Interfaces
 {

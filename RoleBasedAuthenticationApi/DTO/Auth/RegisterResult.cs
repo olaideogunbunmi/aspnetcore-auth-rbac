@@ -1,5 +1,4 @@
-﻿using System.Net;
-
+﻿
 namespace RoleBasedAuthenticationApi.DTO.Auth
 {
     public class RegisterResult

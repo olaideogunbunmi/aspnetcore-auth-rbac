@@ -1,5 +1,4 @@
-﻿using RoleBasedAuthenticationApi.Models;
-
+﻿
 namespace RoleBasedAuthenticationApi.DTO.User
 {
     public class UserRoleRemoveResult

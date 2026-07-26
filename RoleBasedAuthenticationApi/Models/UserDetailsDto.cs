@@ -1,5 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
+﻿
 namespace RoleBasedAuthenticationApi.Models
 {
     public class UserDetailsDto

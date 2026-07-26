@@ -1,8 +1,6 @@
 ﻿using RoleBasedAuthenticationApi.DTO.Claim;
 using RoleBasedAuthenticationApi.DTO.Profile;
-using RoleBasedAuthenticationApi.DTO.User;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.JsonWebTokens;
 using System.Security.Claims;

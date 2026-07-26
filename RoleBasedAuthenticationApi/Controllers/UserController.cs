@@ -1,5 +1,4 @@
 ﻿using RoleBasedAuthenticationApi.DTO.Claim;
-using RoleBasedAuthenticationApi.DTO.Role;
 using RoleBasedAuthenticationApi.DTO.User;
 using RoleBasedAuthenticationApi.Interfaces;
 using RoleBasedAuthenticationApi.Models;

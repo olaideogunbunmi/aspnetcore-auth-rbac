@@ -339,7 +339,6 @@ namespace RoleBasedAuthenticationApi.Services
             }
 
             // it invalidates any previously issued JWT tokens 
-
             var stampResult = await _userManager.UpdateSecurityStampAsync(user);
 
             if (!stampResult.Succeeded)
