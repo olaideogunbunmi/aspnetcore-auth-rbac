@@ -54,4 +54,16 @@ cd aspnetcore-auth-rbac
 
 # restore dependencies
 dotnet restore
+
+# build the project
+dotnet build
 ```
+
+### Configure the Application
+The project uses ASP.NET Core User Secrets to store sensitive configuration values outside of source control.
+
+Sensitive values include
+- SQL Server connection string
+- JWT secret key
+
+Update the `appsettings.json` with your connection string and JWT settings:
