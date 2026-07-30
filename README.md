@@ -68,7 +68,8 @@ dotnet restore
 
 ### Configuration
 The project uses ASP.NET Core User Secrets to store sensitive configuration values outside of source control, and it uses the standard ASP.NET Core configuration hierarchy: 
-`appsettings.json` → `appsettings.Development.json` → `secrets.json`
+`appsettings.json` → `appsettings.Development.json` → `secrets.json`.
+
 This project requires a database connection string. You can configure this using **Option A (Recommended for Security)** or **Option B (Quickest Setup)**.
 
 Sensitive values include
