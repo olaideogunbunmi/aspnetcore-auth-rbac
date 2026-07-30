@@ -38,14 +38,24 @@ This API follows a set of conventions applied consistently across the codebase.
 ## Getting Started
 
 ### Prerequisites
-efore running the project, ensure that you have the following installed:
+Before running the project, ensure that you have the following installed:
 - .NET 8 SDK
 - SQL Server
 - Git
 - An API testing tool such POSTMAN
 
+#### Required Settings
+The following must be set for JWT Authentication to work:
+
+| Key | Description | Where to set it
+| :--- | :----------- | :-------------- |
+| `JWT:Issuer` | Token Issuer URL | `appsettings.json` |
+| `JWT:Audience` | Token Audience URL | `appsettings.json`
+| `JWT:Key` | Secret key used to sign tokens. Minimum of 32 chars | `User Secrets` |
+| `ConnectionStrings:DefaultConnection` | SQL Server connection string | `appsettings.Development.json` or `User Secrets` |
+
 ### Installation
-```
+``` bash
 # clone the repository
 git clone https://github.com/olaideogunbunmi/aspnetcore-auth-rbac.git
 
@@ -54,16 +64,98 @@ cd aspnetcore-auth-rbac
 
 # restore dependencies
 dotnet restore
-
-# build the project
-dotnet build
 ```
 
-### Configure the Application
-The project uses ASP.NET Core User Secrets to store sensitive configuration values outside of source control.
+### Configuration
+The project uses ASP.NET Core User Secrets to store sensitive configuration values outside of source control, and it uses the standard ASP.NET Core configuration hierarchy: 
+`appsettings.json` → `appsettings.Development.json` → `secrets.json`
+This project requires a database connection string. You can configure this using **Option A (Recommended for Security)** or **Option B (Quickest Setup)**.
 
 Sensitive values include
 - SQL Server connection string
 - JWT secret key
 
-Update the `appsettings.json` with your connection string and JWT settings:
+#### Option A: Using .NET User Secrets (Recommended)
+
+This approach keeps your database credentials safely stored outside of the project directory, preventing accidental commits to source control.
+1. Open your terminal in the project root directory.
+
+2. Initialize user secrets:
+``` bash
+dotnet user-secrets init
+```
+3. Set your JWT key:
+``` bash
+dotnet user-secrets set "JWT:Key" "generate-a-very-long-random-key-her"
+```
+4. Set your connection string
+``` bash
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=YOUR_SQL_SERVER_INSTANCE;Database=RoleBasedAuthenticationDB;Trusted_Connection=True;TrustServerCertificate=True;"
+```
+
+----
+
+### Option B: Using appsettings.json (Quick Setup)
+
+If you prefer not to use user secrets, you can paste your connection string directly into the configuration file.
+1. Open `appsettings.Development.json` or (`appsettings.json`)
+1. Locate the `ConnectionStrings` section, replace the placeholder with your local database details
+``` json
+"ConnectionStrings": {
+        "DefaultConnection": "Server=YOUR_SQL_SERVER_INSTANCE;Database=RoleBasedAuthenticationDB;Trusted_Connection=True;TrustServerCertificate=True;"
+    }
+```
+For Jwt Key configuration
+1. Open `appsettings.json`
+1. Locate `JWT` section, mirror the code below
+``` json
+"JWT": {
+    "Key": "YOUR_SECRET_KEY"
+}
+```
+
+**Warning:** If you choose Option B, be careful not to commit your actual connection string or secret key to GitHub
+
+
+## Database Setup
+Run the following command from the project directory:
+``` bash
+dotnet ef database update
+```
+## Run the Application
+``` bash
+dotnet run
+```
+
+The API will be available at the port configured in `launchSettings.json`.
+
+## API Overview
+
+| Resource               | Description                          |
+|------------------------|--------------------------------------|
+| /api/auth              | Registration, login, token issuance  |
+| /api/users             | User CRUD, enable/disable            |
+| /api/users/{id}/claims | Claims management                    |
+| /api/roles             | Role CRUD                            |
+| /api/profile           | Authenticated user's own profile     |
+
+
+## Project Structure
+```
+RoleBasedAuthenticationApi/
+├── Configuration/
+├── Controlllers/
+├── Data/
+├── DTO/
+├── Interfaces/
+├── Migrations/
+├── Models/
+├── Services/
+├── Program.cs
+├── appsettings.json
+```
+
+
+
+
+
