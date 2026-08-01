@@ -55,6 +55,9 @@ cd aspnetcore-auth-rbac
 
 # restore dependencies
 dotnet restore
+
+# build the project
+dotnet build
 ```
 
 ### Configuration
