@@ -43,8 +43,7 @@ namespace RoleBasedAuthenticationApi.Controllers
                 CustomClaims = customClaims,
             });
 
-
             //This endpoint reflects the token snapshot at login time — not the current database state. If an admin updates the user's role after they logged in, this endpoint still returns the old role until the user logs out and gets a fresh token.
         }
-    }
+    }    
 }

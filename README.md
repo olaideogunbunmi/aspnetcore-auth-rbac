@@ -44,15 +44,6 @@ Before running the project, ensure that you have the following installed:
 - Git
 - An API testing tool such POSTMAN
 
-#### Required Settings
-The following must be set for JWT Authentication to work:
-
-| Key | Description | Where to set it
-| :--- | :----------- | :-------------- |
-| `JWT:Issuer` | Token Issuer URL | `appsettings.json` |
-| `JWT:Audience` | Token Audience URL | `appsettings.json`
-| `JWT:Key` | Secret key used to sign tokens. Minimum of 32 chars | `User Secrets` |
-| `ConnectionStrings:DefaultConnection` | SQL Server connection string | `appsettings.Development.json` or `User Secrets` |
 
 ### Installation
 ``` bash
@@ -76,6 +67,17 @@ Sensitive values include
 - SQL Server connection string
 - JWT secret key
 
+### Required Settings
+The following must be set for JWT Authentication to work:
+
+| Key | Description | Where to set it
+| :--- | :----------- | :-------------- |
+| `JWT:Issuer` | Token Issuer URL | `appsettings.json` |
+| `JWT:Audience` | Token Audience URL | `appsettings.json`
+| `JWT:Key` | Secret key used to sign tokens. Minimum of 32 chars | `User Secrets` |
+| `ConnectionStrings:DefaultConnection` | SQL Server connection string | `appsettings.Development.json` or `User Secrets` |
+
+
 #### Option A: Using .NET User Secrets (Recommended)
 
 This approach keeps your database credentials safely stored outside of the project directory, preventing accidental commits to source control.
@@ -87,14 +89,12 @@ dotnet user-secrets init
 ```
 3. Set your JWT key:
 ``` bash
-dotnet user-secrets set "JWT:Key" "generate-a-very-long-random-key-her"
+dotnet user-secrets set "JWT:Key" "generate-a-very-long-random-key-here"
 ```
 4. Set your connection string
 ``` bash
 dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=YOUR_SQL_SERVER_INSTANCE;Database=RoleBasedAuthenticationDB;Trusted_Connection=True;TrustServerCertificate=True;"
 ```
-
-----
 
 ### Option B: Using appsettings.json (Quick Setup)
 
@@ -118,17 +118,17 @@ For Jwt Key configuration
 **Warning:** If you choose Option B, be careful not to commit your actual connection string or secret key to GitHub
 
 
-## Database Setup
+### Database Setup
 Run the following command from the project directory:
 ``` bash
 dotnet ef database update
 ```
-## Run the Application
+### Run the Application
 ``` bash
 dotnet run
 ```
 
-The API will be available at the port configured in `launchSettings.json`.
+The API will be available at the port configured in `launchSettings.json`. Once running, Swagger UI is available at `https://localhost:{port}/swagger` for exploring and testing the endpoints directly in the browser.
 
 ## API Overview
 
@@ -145,7 +145,7 @@ The API will be available at the port configured in `launchSettings.json`.
 ```
 RoleBasedAuthenticationApi/
 ├── Configuration/
-├── Controlllers/
+├── Controllers/
 ├── Data/
 ├── DTO/
 ├── Interfaces/
