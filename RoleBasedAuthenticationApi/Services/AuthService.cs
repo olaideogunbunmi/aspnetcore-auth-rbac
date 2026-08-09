@@ -6,6 +6,10 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using System.Security.Cryptography;
+using RoleBasedAuthenticationApi.Data;
+using Microsoft.EntityFrameworkCore;
+
 
 namespace RoleBasedAuthenticationApi.Services
 {
@@ -14,13 +18,15 @@ namespace RoleBasedAuthenticationApi.Services
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IConfiguration _configuration;
         private readonly SignInManager<ApplicationUser> _signInManager;
-        private readonly RoleManager<IdentityRole> _roleManager;
-        public AuthService(UserManager<ApplicationUser> userManager, IConfiguration configuration, SignInManager<ApplicationUser> signInManager, RoleManager<IdentityRole> roleManager)
+        private readonly ApplicationDbContext _context;
+        
+        
+        public AuthService(UserManager<ApplicationUser> userManager, IConfiguration configuration, SignInManager<ApplicationUser> signInManager, ApplicationDbContext context)
         {
             _userManager = userManager;
             _configuration = configuration;
             _signInManager = signInManager;
-            _roleManager = roleManager;
+            _context = context;
         }
 
         public async Task<RegisterResult> RegisterAsync(RegisterDto dto)
@@ -117,11 +123,54 @@ namespace RoleBasedAuthenticationApi.Services
                 };
             }
 
+            var accessToken = await GenerateJwtToken(user);
+            var rawRefreshToken = await GenerateRefreshToken();
+            var hashedRefreshToken = await HashToken(rawRefreshToken);
+
+
+            var refreshTokenEntity = new RefreshToken
+            {
+                UserId = user.Id, //thinking of using PublicId
+                TokenHash = hashedRefreshToken,
+                ExpiredAt = DateTimeOffset.UtcNow.AddDays(7),
+                Revoked = false,
+            };
+
+            await _context.RefreshTokens.AddAsync(refreshTokenEntity);
+            await _context.SaveChangesAsync();
+
             return new LoginResult
             {
                 IsSuccess = true,
-                Token = await GenerateJwtToken(user)
+                AccessToken = accessToken,
+                RefreshToken = rawRefreshToken
             };
+        }
+
+        public async Task<string> RefreshTokenAsync(string rawToken)
+        {
+           string hashedToken =  await HashToken(rawToken);
+            var token = await _context.RefreshTokens.FirstOrDefaultAsync(x => x.TokenHash ==  hashedToken && !x.Revoked);
+
+            if (token == null || token.ExpiredAt < DateTimeOffset.UtcNow)
+            {
+                return "Invalid or expired token";
+            }
+
+            var user = await _userManager.FindByIdAsync(token.UserId);
+
+            if (user == null)
+            {
+                return "User not found";
+            }
+
+            var newAccessToken = await GenerateJwtToken(user);
+
+            return newAccessToken.ToString();
+
+            //var newRefreshToken = await GenerateRefreshToken();
+            
+            //Token Rotation and Revocation
         }
 
         private async Task<string> GenerateJwtToken(ApplicationUser user)
@@ -162,7 +211,7 @@ namespace RoleBasedAuthenticationApi.Services
                 Subject = new ClaimsIdentity(claims),
                 IssuedAt = DateTime.UtcNow,
                 NotBefore = DateTime.UtcNow,
-                Expires = DateTime.UtcNow.AddMinutes(10),
+                Expires = DateTime.UtcNow.AddMinutes(5),
                 SigningCredentials = credentials
             };
 
@@ -170,12 +219,38 @@ namespace RoleBasedAuthenticationApi.Services
             return tokenHandler.WriteToken(token);
         }
 
-        public static void RefreshToken()
+
+
+        private async Task<string> GenerateRefreshToken()
         {
-            //important due to expiration of generated token
-            //give it a revoke flag, in case of locked account so it won;t give it refresh token while access token dies off - revocation
+            byte[] randomString = RandomNumberGenerator.GetBytes(64);
+            return Convert.ToBase64String(randomString);
         }
 
+        private async Task<string> HashToken(string rawToken)
+        {
+            byte[] refreshTokenBytes = Encoding.UTF8.GetBytes(rawToken);
+            byte[] refreshTokenHash = SHA512.HashData(refreshTokenBytes);
+
+            return Convert.ToBase64String(refreshTokenHash);
+        }
+
+        //public static void RefreshToken()
+        //{
+        //    //important due to expiration of generated token
+        //    //give it a revoke flag, in case of locked account so it won;t give it refresh token while access token dies off - revocation
+        //    //rotation
+        //    //revocation
+        //}
+
+        public static void TokenRotation()
+        {
+
+        }
+        public static void TokenRevocation()
+        {
+
+        }
         public static void Logout()
         {
 

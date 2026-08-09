@@ -11,7 +11,8 @@ namespace RoleBasedAuthenticationApi.DTO.Auth
     public class LoginResult
     {
         public bool IsSuccess { get; init; }
-        public string? Token {  get; init; }
+        public string? AccessToken {  get; init; }
+        public string? RefreshToken { get; set; }
         public LoginResultType? Failure { get; init; }
     }
 }

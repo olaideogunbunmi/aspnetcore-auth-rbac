@@ -1,6 +1,7 @@
-﻿using RoleBasedAuthenticationApi.Models;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using RoleBasedAuthenticationApi.Configuration;
+using RoleBasedAuthenticationApi.Models;
 
 namespace RoleBasedAuthenticationApi.Data
 {
@@ -11,6 +12,7 @@ namespace RoleBasedAuthenticationApi.Data
             
         }
         public DbSet<ApplicationUser> ApplicationUsers { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -28,7 +30,7 @@ namespace RoleBasedAuthenticationApi.Data
                    .HasDefaultValueSql("NEXT VALUE FOR UserPublicIdSequence")
                    .IsRequired();
 
-            //3. Add unique index using rhe
+            //3. Add unique index using the
             builder.Entity<ApplicationUser>()
                 .HasIndex(u => u.PublicId)
                 .IsUnique();
@@ -36,8 +38,13 @@ namespace RoleBasedAuthenticationApi.Data
             //4 dates timespan
             builder.Entity<ApplicationUser>()
                 .Property(u => u.CreatedDate)
-                .HasDefaultValueSql("GETUTCDATE()");
+                .HasDefaultValueSql("SYSUTCDATETIME()");
+
+            //5. RefreshToken Table
+            builder.ApplyConfiguration(new RefreshTokenConfig());           
 
         }
+
+        
     }
 }

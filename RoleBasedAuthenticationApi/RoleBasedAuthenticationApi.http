@@ -1,6 +1,20 @@
-@RoleBasedAuthenticationApi_HostAddress = http://localhost:5082
+@RoleBasedAuthenticationApi_HostAddress =  https://localhost:7226
 
-GET {{RoleBasedAuthenticationApi_HostAddress}}/weatherforecast/
-Accept: application/json
+### Register a new user
+POST {{RoleBasedAuthenticationApi_HostAddress}}/api/auth/register
+Content-Type: application/json
 
-###
+{
+  "fullName": "string",
+  "email": "user@example.com",
+  "password": "string"
+}
+
+### Login
+POST {{RoleBasedAuthenticationApi_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "string"
+}

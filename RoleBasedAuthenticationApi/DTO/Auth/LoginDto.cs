@@ -14,6 +14,7 @@ namespace RoleBasedAuthenticationApi.DTO.Auth
 
     public class LoginResponseDto
     {
-        public string Token { get; init; }
+        public string AccessToken { get; init; }
+        public string RefreshToken { get; init; }
     }
 }

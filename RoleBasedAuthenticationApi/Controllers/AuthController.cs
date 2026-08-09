@@ -1,7 +1,8 @@
-﻿using RoleBasedAuthenticationApi.DTO.Auth;
-using RoleBasedAuthenticationApi.Interfaces;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using RoleBasedAuthenticationApi.DTO.Auth;
+using RoleBasedAuthenticationApi.DTO.Token;
+using RoleBasedAuthenticationApi.Interfaces;
 
 
 namespace RoleBasedAuthenticationApi.Controllers
@@ -94,8 +95,19 @@ namespace RoleBasedAuthenticationApi.Controllers
 
             return Ok( new LoginResponseDto 
             { 
-                Token = result.Token! 
+                AccessToken = result.AccessToken!,
+                RefreshToken = result.RefreshToken!
             });
+        }
+
+
+        [HttpPost]
+        [Route("refresh-token")]
+        public async Task<ActionResult> RefreshToken(RefreshTokenDto dto)
+        {
+            var accessToken = await _authService.RefreshTokenAsync(dto.Token);
+
+            return Ok(accessToken);
         }
     }
 }

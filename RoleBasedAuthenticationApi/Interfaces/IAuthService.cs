@@ -7,5 +7,6 @@ namespace RoleBasedAuthenticationApi.Interfaces
     {
         Task<RegisterResult> RegisterAsync(RegisterDto dto);
         Task<LoginResult> LoginAsync(LoginDto dto);
+        Task<string> RefreshTokenAsync(string token);
     }
 }
