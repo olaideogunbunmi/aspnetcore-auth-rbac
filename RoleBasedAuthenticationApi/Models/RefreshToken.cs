@@ -20,7 +20,8 @@ namespace RoleBasedAuthenticationApi.Models
         public string? RevokedByIP { get; set; }
 
         //Link to the token replacement 
-        public RefreshToken ReplaceByToken {  get; set; }
+        public RefreshToken? ReplaceByToken {  get; set; }
+
         public Guid? ReplaceByTokenId { get; set; }
 
         //computed property

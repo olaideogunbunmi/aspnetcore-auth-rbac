@@ -18,3 +18,7 @@ Content-Type: application/json
   "email": "user@example.com",
   "password": "string"
 }
+
+### Access Admin Resource
+GET {{RoleBasedAuthenticationApi_HostAddress}}/api/users/
+Authorization: Bearer YOUR_ACCESS_TOKEN

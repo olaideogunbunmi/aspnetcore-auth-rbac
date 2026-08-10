@@ -19,8 +19,8 @@ namespace RoleBasedAuthenticationApi.Services
         private readonly IConfiguration _configuration;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly ApplicationDbContext _context;
-        
-        
+
+
         public AuthService(UserManager<ApplicationUser> userManager, IConfiguration configuration, SignInManager<ApplicationUser> signInManager, ApplicationDbContext context)
         {
             _userManager = userManager;
@@ -149,8 +149,8 @@ namespace RoleBasedAuthenticationApi.Services
 
         public async Task<string> RefreshTokenAsync(string rawToken)
         {
-           string hashedToken =  await HashToken(rawToken);
-            var token = await _context.RefreshTokens.FirstOrDefaultAsync(x => x.TokenHash ==  hashedToken && !x.Revoked);
+            string hashedToken = await HashToken(rawToken);
+            var token = await _context.RefreshTokens.FirstOrDefaultAsync(x => x.TokenHash == hashedToken && !x.Revoked);
 
             if (token == null || token.ExpiredAt < DateTimeOffset.UtcNow)
             {
@@ -165,12 +165,28 @@ namespace RoleBasedAuthenticationApi.Services
             }
 
             var newAccessToken = await GenerateJwtToken(user);
+            var newRefreshToken = await GenerateRefreshToken();
 
-            return newAccessToken.ToString();
+            var newTokenEntity = new RefreshToken
+            {
+                UserId = token.UserId,
+                TokenHash = await HashToken(newRefreshToken),
+                ExpiredAt = DateTimeOffset.UtcNow.AddDays(7),
+                Revoked = false
+            };
 
-            //var newRefreshToken = await GenerateRefreshToken();
-            
             //Token Rotation and Revocation
+
+            token.Revoked = true;
+            token.RevokedAt = DateTimeOffset.UtcNow;
+            token.ReplaceByToken = newTokenEntity; //watch this line
+
+            
+            await _context.RefreshTokens.AddAsync(newTokenEntity);
+            _context.RefreshTokens.Update(token);
+            await _context.SaveChangesAsync();
+
+            return $"{newRefreshToken} and {newAccessToken}";
         }
 
         private async Task<string> GenerateJwtToken(ApplicationUser user)
@@ -187,7 +203,7 @@ namespace RoleBasedAuthenticationApi.Services
                 //new Claim(ClaimTypes.NameIdentifier, user.PublicId.ToString()), //for .NET
 
                 //prevent tokens having same payload and signature - though nearly impossble for same signature to be generated
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),         
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim(ClaimTypes.Email, user.Email!),
                 new Claim(ClaimTypes.Name, user.FullName),
             };
