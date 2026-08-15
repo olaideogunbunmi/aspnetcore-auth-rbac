@@ -103,11 +103,37 @@ namespace RoleBasedAuthenticationApi.Controllers
 
         [HttpPost]
         [Route("refresh-token")]
+        [ProducesResponseType(typeof(RefreshTokenResponseDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult> RefreshToken(RefreshTokenDto dto)
         {
-            var accessToken = await _authService.RefreshTokenAsync(dto.Token);
+            var result = await _authService.RefreshTokenAsync(dto.Token);
 
-            return Ok(accessToken);
+            if (!result.IsSuccess)
+            {
+                return result.Failure switch
+                {
+                    TokenFailureType.Invalid => Problem(
+                        statusCode: StatusCodes.Status401Unauthorized,
+                        title: "Invalid grant",
+                        detail: "The token has expired or has been revoked"
+                        ),
+
+                    _ => Problem(
+                        statusCode: StatusCodes.Status404NotFound,
+                        title: "Not Found",
+                        detail: "User cannot be found"
+                        )
+                };
+            }
+
+            return Ok(new RefreshTokenResponseDto
+            {
+                AccessToken = result.AccessToken,
+                RefreshToken = result.RefreshToken               
+            });
+
         }
     }
 }

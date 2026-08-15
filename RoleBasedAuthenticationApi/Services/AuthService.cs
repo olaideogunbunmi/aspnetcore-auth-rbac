@@ -1,14 +1,15 @@
-﻿using RoleBasedAuthenticationApi.DTO.Auth;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using RoleBasedAuthenticationApi.Data;
+using RoleBasedAuthenticationApi.DTO.Auth;
+using RoleBasedAuthenticationApi.DTO.Token;
 using RoleBasedAuthenticationApi.Interfaces;
 using RoleBasedAuthenticationApi.Models;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Text;
 using System.Security.Cryptography;
-using RoleBasedAuthenticationApi.Data;
-using Microsoft.EntityFrameworkCore;
+using System.Text;
 
 
 namespace RoleBasedAuthenticationApi.Services
@@ -147,24 +148,33 @@ namespace RoleBasedAuthenticationApi.Services
             };
         }
 
-        public async Task<string> RefreshTokenAsync(string rawToken)
+        public async Task<RefreshTokenResult> RefreshTokenAsync(string rawToken)
         {
             string hashedToken = await HashToken(rawToken);
-            var token = await _context.RefreshTokens.FirstOrDefaultAsync(x => x.TokenHash == hashedToken && !x.Revoked);
 
-            if (token == null || token.ExpiredAt < DateTimeOffset.UtcNow)
+            var token = await _context.RefreshTokens.FirstOrDefaultAsync(x => x.TokenHash == hashedToken && x.Revoked == false && DateTimeOffset.UtcNow < x.ExpiredAt);
+
+            if (token == null)
             {
-                return "Invalid or expired token";
+                return new RefreshTokenResult
+                {
+                    IsSuccess = false,
+                    Failure = TokenFailureType.Invalid
+                };
             }
 
             var user = await _userManager.FindByIdAsync(token.UserId);
 
             if (user == null)
             {
-                return "User not found";
+                return new RefreshTokenResult
+                {
+                    IsSuccess = false,
+                    Failure = TokenFailureType.UserNotFound
+                };
             }
 
-            var newAccessToken = await GenerateJwtToken(user);
+            var newJwtToken = await GenerateJwtToken(user);
             var newRefreshToken = await GenerateRefreshToken();
 
             var newTokenEntity = new RefreshToken
@@ -179,14 +189,19 @@ namespace RoleBasedAuthenticationApi.Services
 
             token.Revoked = true;
             token.RevokedAt = DateTimeOffset.UtcNow;
-            token.ReplaceByToken = newTokenEntity; //watch this line
+            token.ReplaceByToken = newTokenEntity;
 
-            
+
             await _context.RefreshTokens.AddAsync(newTokenEntity);
             _context.RefreshTokens.Update(token);
             await _context.SaveChangesAsync();
 
-            return $"{newRefreshToken} and {newAccessToken}";
+            return new RefreshTokenResult
+            {
+                IsSuccess = true,           
+                AccessToken = newJwtToken,
+                RefreshToken = newRefreshToken
+            };
         }
 
         private async Task<string> GenerateJwtToken(ApplicationUser user)

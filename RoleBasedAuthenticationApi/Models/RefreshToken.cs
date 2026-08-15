@@ -27,5 +27,6 @@ namespace RoleBasedAuthenticationApi.Models
         //computed property
         [NotMapped]
         public bool IsActive => !Revoked && DateTimeOffset.UtcNow < ExpiredAt;
+                                
     }
 }

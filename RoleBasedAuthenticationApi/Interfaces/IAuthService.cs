@@ -1,4 +1,5 @@
 ﻿using RoleBasedAuthenticationApi.DTO.Auth;
+using RoleBasedAuthenticationApi.DTO.Token;
 
 
 namespace RoleBasedAuthenticationApi.Interfaces
@@ -7,6 +8,6 @@ namespace RoleBasedAuthenticationApi.Interfaces
     {
         Task<RegisterResult> RegisterAsync(RegisterDto dto);
         Task<LoginResult> LoginAsync(LoginDto dto);
-        Task<string> RefreshTokenAsync(string token);
+        Task<RefreshTokenResult> RefreshTokenAsync(string token);
     }
 }

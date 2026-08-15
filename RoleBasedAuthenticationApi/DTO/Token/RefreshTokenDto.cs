@@ -1,7 +1,10 @@
-﻿namespace RoleBasedAuthenticationApi.DTO.Token
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace RoleBasedAuthenticationApi.DTO.Token
 {
     public class RefreshTokenDto
     {
-        public string Token {  get; set; }
+        [Required]
+        public string Token {  get; init; }
     }
 }
