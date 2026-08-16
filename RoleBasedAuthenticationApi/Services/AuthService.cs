@@ -123,22 +123,11 @@ namespace RoleBasedAuthenticationApi.Services
                     Failure = LoginResultType.InvalidCredentials
                 };
             }
-
+            
             var accessToken = await GenerateJwtToken(user);
             var rawRefreshToken = await GenerateRefreshToken();
-            var hashedRefreshToken = await HashToken(rawRefreshToken);
 
-
-            var refreshTokenEntity = new RefreshToken
-            {
-                UserId = user.Id, //thinking of using PublicId
-                TokenHash = hashedRefreshToken,
-                ExpiredAt = DateTimeOffset.UtcNow.AddDays(7),
-                Revoked = false,
-            };
-
-            await _context.RefreshTokens.AddAsync(refreshTokenEntity);
-            await _context.SaveChangesAsync();
+            await RevokeLastRefreshTokenOnLogin(user, rawRefreshToken);
 
             return new LoginResult
             {
@@ -250,8 +239,6 @@ namespace RoleBasedAuthenticationApi.Services
             return tokenHandler.WriteToken(token);
         }
 
-
-
         private async Task<string> GenerateRefreshToken()
         {
             byte[] randomString = RandomNumberGenerator.GetBytes(64);
@@ -266,6 +253,31 @@ namespace RoleBasedAuthenticationApi.Services
             return Convert.ToBase64String(refreshTokenHash);
         }
 
+        private async Task RevokeLastRefreshTokenOnLogin(ApplicationUser user, string rawRefreshToken)
+        {
+            var hashedRefreshToken = await HashToken(rawRefreshToken);
+
+            var refreshTokenEntity = new RefreshToken
+            {
+                UserId = user.Id,
+                TokenHash = hashedRefreshToken,
+                ExpiredAt = DateTimeOffset.UtcNow.AddDays(7),
+                Revoked = false,
+            };
+
+            var userOldRefreshToken = await _context.RefreshTokens.OrderByDescending(u => u.CreatedAt).FirstOrDefaultAsync(x => x.UserId == user.Id);
+
+            if (userOldRefreshToken != null)
+            {
+                userOldRefreshToken.Revoked = true;
+                userOldRefreshToken.RevokedAt = DateTimeOffset.UtcNow;
+                userOldRefreshToken.ReplaceByToken = refreshTokenEntity;
+            }
+
+            await _context.RefreshTokens.AddAsync(refreshTokenEntity);
+            await _context.SaveChangesAsync();
+        }
+
         //public static void RefreshToken()
         //{
         //    //important due to expiration of generated token
@@ -274,14 +286,7 @@ namespace RoleBasedAuthenticationApi.Services
         //    //revocation
         //}
 
-        public static void TokenRotation()
-        {
 
-        }
-        public static void TokenRevocation()
-        {
-
-        }
         public static void Logout()
         {
 
