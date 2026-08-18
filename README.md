@@ -18,6 +18,7 @@ A WEB API built with ASP.NET Core 8, ASP.NET Core Identity that provides JWT-bas
 - Swagger/OpenAPI API documentation
 - Secure configuration using ASP.NET Core User Secrets
 - Global JSON null-value handling
+- Refresh Token support with rotation and revocation
 
 ## Tech Stack
 - ASP.NET Core Web API
@@ -142,6 +143,7 @@ The API will be available at the port configured in `launchSettings.json`. Once 
 | /api/users/{id}/claims | Claims management                    |
 | /api/roles             | Role CRUD                            |
 | /api/profile           | Authenticated user's own profile     |
+| /api/auth/refresh      | Authentication Token Refresh         |
 
 
 ## Project Structure

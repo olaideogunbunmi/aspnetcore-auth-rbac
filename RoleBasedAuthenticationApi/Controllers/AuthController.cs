@@ -102,7 +102,7 @@ namespace RoleBasedAuthenticationApi.Controllers
 
 
         [HttpPost]
-        [Route("refresh-token")]
+        [Route("refresh")]
         [ProducesResponseType(typeof(RefreshTokenResponseDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]

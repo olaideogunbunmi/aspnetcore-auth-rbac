@@ -82,7 +82,6 @@ namespace RoleBasedAuthenticationApi.Services
             };
         }
 
-
         public async Task<LoginResult> LoginAsync(LoginDto dto)
         {
             var user = await _userManager.FindByEmailAsync(dto.Email);
@@ -282,8 +281,7 @@ namespace RoleBasedAuthenticationApi.Services
         //{
         //    //important due to expiration of generated token
         //    //give it a revoke flag, in case of locked account so it won;t give it refresh token while access token dies off - revocation
-        //    //rotation
-        //    //revocation
+        
         //}
 
 
