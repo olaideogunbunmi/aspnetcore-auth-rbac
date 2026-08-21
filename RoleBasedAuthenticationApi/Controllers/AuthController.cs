@@ -54,8 +54,8 @@ namespace RoleBasedAuthenticationApi.Controllers
             }
 
             return CreatedAtRoute(
-                routeName: "getuser", 
-                routeValues: new { id = result.User!.Id }, 
+                routeName: "getuser",
+                routeValues: new { id = result.User!.Id },
                 value: result.User);
         }
 
@@ -93,8 +93,8 @@ namespace RoleBasedAuthenticationApi.Controllers
                 };
             }
 
-            return Ok( new LoginResponseDto 
-            { 
+            return Ok(new LoginResponseDto
+            {
                 AccessToken = result.AccessToken!,
                 RefreshToken = result.RefreshToken!
             });
@@ -104,9 +104,8 @@ namespace RoleBasedAuthenticationApi.Controllers
         [HttpPost]
         [Route("refresh")]
         [ProducesResponseType(typeof(RefreshTokenResponseDto), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<ActionResult> RefreshToken(RefreshTokenDto dto)
+        public async Task<ActionResult<RefreshTokenResponseDto>> RefreshToken(RefreshTokenDto dto)
         {
             var result = await _authService.RefreshTokenAsync(dto.Token);
 
@@ -116,14 +115,26 @@ namespace RoleBasedAuthenticationApi.Controllers
                 {
                     TokenFailureType.Invalid => Problem(
                         statusCode: StatusCodes.Status401Unauthorized,
-                        title: "Invalid grant",
-                        detail: "The token has expired or has been revoked"
+                        title: "invalid_grant",
+                        detail: "The token is invalid or does not exist"
+                        ),
+
+                    TokenFailureType.ReuseDetected or TokenFailureType.Expired => Problem(
+                    statusCode: StatusCodes.Status401Unauthorized,
+                    title: "invalid_grant",
+                    detail: "The token has expired or has been revoked"
+                    ),
+
+                    TokenFailureType.UserNotFound => Problem(
+                        statusCode: StatusCodes.Status401Unauthorized,
+                        title: "invalid_grant",
+                        detail: "This token can no longer be used"
                         ),
 
                     _ => Problem(
-                        statusCode: StatusCodes.Status404NotFound,
-                        title: "Not Found",
-                        detail: "User cannot be found"
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        title: "Unexpected error",
+                        detail: "An unexpected error occurred"
                         )
                 };
             }
@@ -131,7 +142,7 @@ namespace RoleBasedAuthenticationApi.Controllers
             return Ok(new RefreshTokenResponseDto
             {
                 AccessToken = result.AccessToken,
-                RefreshToken = result.RefreshToken               
+                RefreshToken = result.RefreshToken
             });
 
         }

@@ -124,7 +124,7 @@ namespace RoleBasedAuthenticationApi.Services
             }
             
             var accessToken = await GenerateJwtToken(user);
-            var rawRefreshToken = await GenerateRefreshToken();
+            var rawRefreshToken = GenerateRefreshToken();
 
             await RevokeLastRefreshTokenOnLogin(user, rawRefreshToken);
 
@@ -138,9 +138,11 @@ namespace RoleBasedAuthenticationApi.Services
 
         public async Task<RefreshTokenResult> RefreshTokenAsync(string rawToken)
         {
-            string hashedToken = await HashToken(rawToken);
+            string hashedToken = HashToken(rawToken);
 
-            var token = await _context.RefreshTokens.FirstOrDefaultAsync(x => x.TokenHash == hashedToken && x.Revoked == false && DateTimeOffset.UtcNow < x.ExpiredAt);
+            //var token = await _context.RefreshTokens.FirstOrDefaultAsync(x => x.TokenHash == hashedToken && x.Revoked == false && DateTimeOffset.UtcNow < x.ExpiredAt);
+
+            var token = await _context.RefreshTokens.FirstOrDefaultAsync(x => x.TokenHash == hashedToken);
 
             if (token == null)
             {
@@ -148,6 +150,26 @@ namespace RoleBasedAuthenticationApi.Services
                 {
                     IsSuccess = false,
                     Failure = TokenFailureType.Invalid
+                };
+            }
+
+            if (token.Revoked)
+            {
+                await RevokeAllUserRefreshTokensAsync(token.UserId);
+
+                return new RefreshTokenResult
+                {
+                    IsSuccess = false,
+                    Failure = TokenFailureType.ReuseDetected
+                };
+            }
+
+            if (DateTimeOffset.UtcNow > token.ExpiredAt)
+            {
+                return new RefreshTokenResult
+                {
+                    IsSuccess = false,
+                    Failure = TokenFailureType.Expired
                 };
             }
 
@@ -163,12 +185,12 @@ namespace RoleBasedAuthenticationApi.Services
             }
 
             var newJwtToken = await GenerateJwtToken(user);
-            var newRefreshToken = await GenerateRefreshToken();
+            var newRefreshToken = GenerateRefreshToken();
 
             var newTokenEntity = new RefreshToken
             {
                 UserId = token.UserId,
-                TokenHash = await HashToken(newRefreshToken),
+                TokenHash = HashToken(newRefreshToken),
                 ExpiredAt = DateTimeOffset.UtcNow.AddDays(7),
                 Revoked = false
             };
@@ -181,7 +203,7 @@ namespace RoleBasedAuthenticationApi.Services
 
 
             await _context.RefreshTokens.AddAsync(newTokenEntity);
-            _context.RefreshTokens.Update(token);
+            //_context.RefreshTokens.Update(token);
             await _context.SaveChangesAsync();
 
             return new RefreshTokenResult
@@ -238,13 +260,13 @@ namespace RoleBasedAuthenticationApi.Services
             return tokenHandler.WriteToken(token);
         }
 
-        private async Task<string> GenerateRefreshToken()
+        private string GenerateRefreshToken()
         {
             byte[] randomString = RandomNumberGenerator.GetBytes(64);
             return Convert.ToBase64String(randomString);
         }
 
-        private async Task<string> HashToken(string rawToken)
+        private string HashToken(string rawToken)
         {
             byte[] refreshTokenBytes = Encoding.UTF8.GetBytes(rawToken);
             byte[] refreshTokenHash = SHA512.HashData(refreshTokenBytes);
@@ -254,7 +276,7 @@ namespace RoleBasedAuthenticationApi.Services
 
         private async Task RevokeLastRefreshTokenOnLogin(ApplicationUser user, string rawRefreshToken)
         {
-            var hashedRefreshToken = await HashToken(rawRefreshToken);
+            var hashedRefreshToken = HashToken(rawRefreshToken);
 
             var refreshTokenEntity = new RefreshToken
             {
@@ -277,11 +299,27 @@ namespace RoleBasedAuthenticationApi.Services
             await _context.SaveChangesAsync();
         }
 
+        private async Task RevokeAllUserRefreshTokensAsync(string userId)
+        {
+            var token =  await _context.RefreshTokens.Where(x => x.UserId == userId).ToListAsync();
+
+            foreach (var tokenEntity in token)
+            {
+                tokenEntity.Revoked = true;
+                tokenEntity.RevokedAt = DateTimeOffset.UtcNow;
+            }
+
+            _context.RefreshTokens.UpdateRange(token);
+            await _context.SaveChangesAsync();
+
+            _logger.LogWarning("Refresh token reuse detected for user {UserId}. All tokens revoked.", userId);
+        }
+
         //public static void RefreshToken()
         //{
         //    //important due to expiration of generated token
         //    //give it a revoke flag, in case of locked account so it won;t give it refresh token while access token dies off - revocation
-        
+
         //}
 
 

@@ -11,6 +11,8 @@
     public enum TokenFailureType
     {
         Invalid,
-        UserNotFound
+        UserNotFound,
+        ReuseDetected,
+        Expired
     }
 }
