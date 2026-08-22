@@ -318,7 +318,7 @@ namespace RoleBasedAuthenticationApi.Services
                 await _context.SaveChangesAsync();
             }
             
-            _logger.LogWarning("Revoked refresh token reuse detected. Token: {hashToken}, User: {userId}", hashToken, userId);
+            _logger.LogWarning("Revoked refresh token reuse detected. Token: {HashToken}, User: {UserId}", hashToken, userId);
         }
 
         public static void Logout()

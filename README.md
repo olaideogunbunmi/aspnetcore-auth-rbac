@@ -1,12 +1,12 @@
 # ASP.NET Core Role-Based Authentication API
 
-A WEB API built with ASP.NET Core 8, ASP.NET Core Identity that provides JWT-based authentication with role and claims-based authorization support.
+A RESTful Web API built with ASP.NET Core 8 and ASP.NET Core Identity that provides JWT-based authentication with role- and claims-based authorization.
 
 ## Features
 - User Management - create, update, enable/disable user accounts
 - Role Management - full CRUD for roles
 - Claims Management - assign/remove claims on users
-- JWT Acces Token Generation
+- JWT Access Token Generation
 - Profile Endpoint - authenticated user profile retrieval
 - RFC 9457 Problem Details — standardized error responses across the API
 - Separation of Concerns - service layers, result objects and input and output DTOs
@@ -18,13 +18,18 @@ A WEB API built with ASP.NET Core 8, ASP.NET Core Identity that provides JWT-bas
 - Swagger/OpenAPI API documentation
 - Secure configuration using ASP.NET Core User Secrets
 - Global JSON null-value handling
-- Refresh Token support with rotation and revocation
+- Refresh token support with rotation, revocation, and reuse detection
 
 ## Tech Stack
 - ASP.NET Core Web API
 - ASP.NET Core Identity
 - Entity Framework Core
 - JWT Bearer Authentication
+- AutoMapper
+- Newtonsoft.Json / JSON Patch
+- Swagger/OpenAPI
+- SQL Server
+- ASP.NET Core `ILogger` for logging
 
 ## Architecture and Design Decisions
 This API follows a set of conventions applied consistently across the codebase.
@@ -35,6 +40,18 @@ This API follows a set of conventions applied consistently across the codebase.
 - `AsNoTracking()` scoped strictly to read-only operations
 - Sequence-based PublicId to avoid exposing internal database primary keys
 - `UpdateSecurityStampAsync()` to invalidate previously issued JWTs when account state changes (e.g. account disable)
+- ASP.NET Core `ILogger` for logging security-related events such as refresh-token reuse detection
+
+## Authentication Flow
+
+1. User registers through the registration endpoint.
+2. ASP.NET Core Identity manages the user account and password hashing.
+3. User logs in with valid credentials.
+4. The API issues a short-lived JWT access token and refresh token.
+5. The client uses the access token to access protected resources.
+6. When the access token expires, the refresh token can be used to obtain a new access token.
+7. Refresh token rotation replaces the previous refresh token.
+8. Revoked or reused refresh tokens are rejected.
 
 ## Getting Started
 
@@ -43,7 +60,7 @@ Before running the project, ensure that you have the following installed:
 - .NET 8 SDK
 - SQL Server
 - Git
-- An API testing tool such POSTMAN
+- An API testing tool such as Postman
 
 
 ### Installation
@@ -62,17 +79,16 @@ dotnet build
 ```
 
 ### Configuration
-The project uses ASP.NET Core User Secrets to store sensitive configuration values outside of source control, and it uses the standard ASP.NET Core configuration hierarchy: 
-`appsettings.json` → `appsettings.Development.json` → `secrets.json`.
+The project uses ASP.NET Core User Secrets to store sensitive configuration values outside of source control. Configuration is loaded through ASP.NET Core's standard configuration system, including `appsettings.json`, `appsettings.Development.json` (environment-specific configuration), and User Secrets. During development, User Secrets stores the sensitive configuration in a `secrets.json` file outside the project directory.
 
 This project requires a database connection string. You can configure this using **Option A (Recommended for Security)** or **Option B (Quickest Setup)**.
 
-Sensitive values include
+Sensitive values include:
 - SQL Server connection string
 - JWT secret key
 
 ### Required Settings
-The following must be set for JWT Authentication to work:
+The following configuration settings are required for the application to run correctly:
 
 | Key | Description | Where to set it
 | :--- | :----------- | :-------------- |
@@ -95,7 +111,7 @@ dotnet user-secrets init
 ``` bash
 dotnet user-secrets set "JWT:Key" "generate-a-very-long-random-key-here"
 ```
-4. Set your connection string
+4. Set your connection string:
 ``` bash
 dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=YOUR_SQL_SERVER_INSTANCE;Database=RoleBasedAuthenticationDB;Trusted_Connection=True;TrustServerCertificate=True;"
 ```
@@ -103,14 +119,14 @@ dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=YOUR_SQL_S
 ### Option B: Using appsettings.json (Quick Setup)
 
 If you prefer not to use user secrets, you can paste your connection string directly into the configuration file.
-1. Open `appsettings.Development.json` or (`appsettings.json`)
+1. Open `appsettings.Development.json` or `appsettings.json`
 1. Locate the `ConnectionStrings` section, replace the placeholder with your local database details
 ``` json
 "ConnectionStrings": {
         "DefaultConnection": "Server=YOUR_SQL_SERVER_INSTANCE;Database=RoleBasedAuthenticationDB;Trusted_Connection=True;TrustServerCertificate=True;"
     }
 ```
-For Jwt Key configuration
+For JWT key configuration:
 1. Open `appsettings.json`
 1. Locate `JWT` section, mirror the code below
 ``` json
@@ -136,19 +152,20 @@ The API will be available at the port configured in `launchSettings.json`. Once 
 
 ## API Overview
 
-| Resource               | Description                          |
-|------------------------|--------------------------------------|
-| /api/auth              | Registration, login, token issuance  |
-| /api/users             | User CRUD, enable/disable            |
-| /api/users/{id}/claims | Claims management                    |
-| /api/roles             | Role CRUD                            |
-| /api/profile           | Authenticated user's own profile     |
-| /api/auth/refresh      | Authentication Token Refresh         |
+| Resource                 | Description                          |
+|------------------------- |--------------------------------------|
+| `/api/auth`              | Registration, login, token issuance  |
+| `/api/users`             | User CRUD, enable/disable            |
+| `/api/users/{id}/claims` | Claims management                    |
+| `/api/roles`             | Role CRUD                            |
+| `/api/profile`           | Authenticated user's own profile     |
+| `/api/auth/refresh`      | Authentication token refresh         |
 
 
 ## Project Structure
 ```
 RoleBasedAuthenticationApi/
+├── Properties/
 ├── Configuration/
 ├── Controllers/
 ├── Data/
@@ -159,6 +176,7 @@ RoleBasedAuthenticationApi/
 ├── Services/
 ├── Program.cs
 ├── appsettings.json
+└── appsettings.Development.json
 ```
 
 
