@@ -20,14 +20,15 @@ namespace RoleBasedAuthenticationApi.Services
         private readonly IConfiguration _configuration;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly ApplicationDbContext _context;
+        private readonly ILogger<AuthService> _logger;
 
-
-        public AuthService(UserManager<ApplicationUser> userManager, IConfiguration configuration, SignInManager<ApplicationUser> signInManager, ApplicationDbContext context)
+        public AuthService(UserManager<ApplicationUser> userManager, IConfiguration configuration, SignInManager<ApplicationUser> signInManager, ApplicationDbContext context, ILogger<AuthService> logger)
         {
             _userManager = userManager;
             _configuration = configuration;
             _signInManager = signInManager;
             _context = context;
+            _logger = logger;
         }
 
         public async Task<RegisterResult> RegisterAsync(RegisterDto dto)
@@ -122,11 +123,11 @@ namespace RoleBasedAuthenticationApi.Services
                     Failure = LoginResultType.InvalidCredentials
                 };
             }
-            
+
             var accessToken = await GenerateJwtToken(user);
             var rawRefreshToken = GenerateRefreshToken();
 
-            await RevokeLastRefreshTokenOnLogin(user, rawRefreshToken);
+            await RotateRefreshTokenOnLoginAsync(user, rawRefreshToken);
 
             return new LoginResult
             {
@@ -155,7 +156,7 @@ namespace RoleBasedAuthenticationApi.Services
 
             if (token.Revoked)
             {
-                await RevokeAllUserRefreshTokensAsync(token.UserId);
+                await RevokeAllUserRefreshTokensAsync(token.UserId, token.TokenHash);
 
                 return new RefreshTokenResult
                 {
@@ -203,12 +204,11 @@ namespace RoleBasedAuthenticationApi.Services
 
 
             await _context.RefreshTokens.AddAsync(newTokenEntity);
-            //_context.RefreshTokens.Update(token);
             await _context.SaveChangesAsync();
 
             return new RefreshTokenResult
             {
-                IsSuccess = true,           
+                IsSuccess = true,
                 AccessToken = newJwtToken,
                 RefreshToken = newRefreshToken
             };
@@ -274,7 +274,7 @@ namespace RoleBasedAuthenticationApi.Services
             return Convert.ToBase64String(refreshTokenHash);
         }
 
-        private async Task RevokeLastRefreshTokenOnLogin(ApplicationUser user, string rawRefreshToken)
+        private async Task RotateRefreshTokenOnLoginAsync(ApplicationUser user, string rawRefreshToken)
         {
             var hashedRefreshToken = HashToken(rawRefreshToken);
 
@@ -286,7 +286,10 @@ namespace RoleBasedAuthenticationApi.Services
                 Revoked = false,
             };
 
+            //Token Rotation and Revocation
+
             var userOldRefreshToken = await _context.RefreshTokens.OrderByDescending(u => u.CreatedAt).FirstOrDefaultAsync(x => x.UserId == user.Id);
+
 
             if (userOldRefreshToken != null)
             {
@@ -299,29 +302,24 @@ namespace RoleBasedAuthenticationApi.Services
             await _context.SaveChangesAsync();
         }
 
-        private async Task RevokeAllUserRefreshTokensAsync(string userId)
+        private async Task RevokeAllUserRefreshTokensAsync(string userId, string hashToken)
         {
-            var token =  await _context.RefreshTokens.Where(x => x.UserId == userId).ToListAsync();
+            var tokens = await _context.RefreshTokens.Where(x => x.UserId == userId && !x.Revoked).ToListAsync();
 
-            foreach (var tokenEntity in token)
+            foreach (var tokenEntity in tokens)
             {
                 tokenEntity.Revoked = true;
                 tokenEntity.RevokedAt = DateTimeOffset.UtcNow;
             }
 
-            _context.RefreshTokens.UpdateRange(token);
-            await _context.SaveChangesAsync();
-
-            _logger.LogWarning("Refresh token reuse detected for user {UserId}. All tokens revoked.", userId);
+            if (tokens.Count > 0)
+            {
+                _context.RefreshTokens.UpdateRange(tokens);
+                await _context.SaveChangesAsync();
+            }
+            
+            _logger.LogWarning("Revoked refresh token reuse detected. Token: {hashToken}, User: {userId}", hashToken, userId);
         }
-
-        //public static void RefreshToken()
-        //{
-        //    //important due to expiration of generated token
-        //    //give it a revoke flag, in case of locked account so it won;t give it refresh token while access token dies off - revocation
-
-        //}
-
 
         public static void Logout()
         {

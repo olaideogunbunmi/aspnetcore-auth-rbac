@@ -119,10 +119,16 @@ namespace RoleBasedAuthenticationApi.Controllers
                         detail: "The token is invalid or does not exist"
                         ),
 
-                    TokenFailureType.ReuseDetected or TokenFailureType.Expired => Problem(
+                    TokenFailureType.Expired => Problem(
                     statusCode: StatusCodes.Status401Unauthorized,
                     title: "invalid_grant",
                     detail: "The token has expired or has been revoked"
+                    ),
+
+                    TokenFailureType.ReuseDetected => Problem(
+                    statusCode: StatusCodes.Status401Unauthorized,
+                    title: "invalid_grant",
+                    detail: "The token has been revoked"
                     ),
 
                     TokenFailureType.UserNotFound => Problem(
