@@ -16,10 +16,10 @@ namespace RoleBasedAuthenticationApi.Controllers
         public ActionResult<UserProfileDto> GetProfile()
         {
             //var id = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
-            var id = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var id = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
-            var email = User.FindFirstValue(claimType: ClaimTypes.Email);
-            var name = User.FindFirstValue(claimType: ClaimTypes.Name);         
+            var email = User.FindFirstValue(claimType: ClaimTypes.Email)!;
+            var name = User.FindFirstValue(claimType: ClaimTypes.Name)!;         
             var role = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
 
