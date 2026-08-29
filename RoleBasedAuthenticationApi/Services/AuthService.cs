@@ -321,9 +321,27 @@ namespace RoleBasedAuthenticationApi.Services
             _logger.LogWarning("Revoked refresh token reuse detected. Token: {HashToken}, User: {UserId}", hashToken, userId);
         }
 
-        public static void Logout()
+        public async Task<string> LogoutAsync(string id)
         {
+            var user = await _userManager.Users.FirstOrDefaultAsync(x => x.PublicId == id);
 
+
+            if (user == null)
+            {
+                return "User Not Found";
+            }
+
+            var userRefreshToken = await _context.RefreshTokens.OrderByDescending(x => x.CreatedAt).FirstOrDefaultAsync(x => x.UserId == user.Id);
+   
+
+            if (userRefreshToken != null)
+            {
+                userRefreshToken.Revoked = true;
+                userRefreshToken.RevokedAt = DateTimeOffset.UtcNow;
+                await _context.SaveChangesAsync();
+            }
+
+            return "Successful";
         }
         public static void ForgotPassword()
         {

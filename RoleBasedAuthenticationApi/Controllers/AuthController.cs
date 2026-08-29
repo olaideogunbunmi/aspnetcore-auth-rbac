@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using RoleBasedAuthenticationApi.DTO.Auth;
 using RoleBasedAuthenticationApi.DTO.Token;
 using RoleBasedAuthenticationApi.Interfaces;
+using System.Security.Claims;
 
 
 namespace RoleBasedAuthenticationApi.Controllers
@@ -151,6 +152,19 @@ namespace RoleBasedAuthenticationApi.Controllers
                 RefreshToken = result.RefreshToken
             });
 
+        }
+
+
+        [HttpPost]
+        [Route("logout")]
+        [Authorize] //only authenticated user can logout
+        public async Task<ActionResult> Logout()
+        {
+            var id = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            await _authService.LogoutAsync(id!);
+
+            return Ok();
         }
     }
 }
