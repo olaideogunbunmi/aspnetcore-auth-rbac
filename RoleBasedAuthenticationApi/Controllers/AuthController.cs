@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using RoleBasedAuthenticationApi.DTO.Auth;
 using RoleBasedAuthenticationApi.DTO.Token;
 using RoleBasedAuthenticationApi.Interfaces;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
 
@@ -158,13 +159,15 @@ namespace RoleBasedAuthenticationApi.Controllers
         [HttpPost]
         [Route("logout")]
         [Authorize] //only authenticated user can logout
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult> Logout()
         {
-            var id = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var id = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
 
             await _authService.LogoutAsync(id!);
 
-            return Ok();
+            return NoContent();
         }
     }
 }

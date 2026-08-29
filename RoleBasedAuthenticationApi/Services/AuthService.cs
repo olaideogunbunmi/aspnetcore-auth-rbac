@@ -317,22 +317,20 @@ namespace RoleBasedAuthenticationApi.Services
                 _context.RefreshTokens.UpdateRange(tokens);
                 await _context.SaveChangesAsync();
             }
-            
+
             _logger.LogWarning("Revoked refresh token reuse detected. Token: {HashToken}, User: {UserId}", hashToken, userId);
         }
 
-        public async Task<string> LogoutAsync(string id)
+        public async Task LogoutAsync(string id)
         {
             var user = await _userManager.Users.FirstOrDefaultAsync(x => x.PublicId == id);
 
-
             if (user == null)
             {
-                return "User Not Found";
+                return;
             }
 
-            var userRefreshToken = await _context.RefreshTokens.OrderByDescending(x => x.CreatedAt).FirstOrDefaultAsync(x => x.UserId == user.Id);
-   
+            var userRefreshToken = await _context.RefreshTokens.Where(x => x.UserId == user.Id && !x.Revoked).FirstOrDefaultAsync();
 
             if (userRefreshToken != null)
             {
@@ -340,8 +338,6 @@ namespace RoleBasedAuthenticationApi.Services
                 userRefreshToken.RevokedAt = DateTimeOffset.UtcNow;
                 await _context.SaveChangesAsync();
             }
-
-            return "Successful";
         }
         public static void ForgotPassword()
         {
