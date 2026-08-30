@@ -9,6 +9,6 @@ namespace RoleBasedAuthenticationApi.Interfaces
         Task<RegisterResult> RegisterAsync(RegisterDto dto);
         Task<LoginResult> LoginAsync(LoginDto dto);
         Task<RefreshTokenResult> RefreshTokenAsync(string token);
-        Task<string> LogoutAsync(string id);
+        Task LogoutAsync(string id);
     }
 }
