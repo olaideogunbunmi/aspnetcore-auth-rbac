@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RoleBasedAuthenticationApi.DTO.Auth;
+using RoleBasedAuthenticationApi.DTO.Password;
 using RoleBasedAuthenticationApi.DTO.Token;
 using RoleBasedAuthenticationApi.Interfaces;
 using System.IdentityModel.Tokens.Jwt;
@@ -168,6 +169,100 @@ namespace RoleBasedAuthenticationApi.Controllers
             await _authService.LogoutAsync(id!);
 
             return NoContent();
+        }
+
+
+        [HttpPost]
+        [Route("forgotpassword")]
+        [ProducesResponseType(typeof(TokenResetDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<TokenResetDto>> ForgotPassword(ForgotPasswordDto dto)
+        {
+            var result = await _authService.ForgotPasswordAsync(dto);
+
+            if (!result.IsSuccess)
+            {
+                return Problem(
+                    statusCode: StatusCodes.Status400BadRequest,
+                    title: "Invalid request",
+                    detail: "User with this email does not exist"
+                    );
+            }
+
+            return Ok(new TokenResetDto 
+            { 
+                Token = result.ResetToken
+            });
+        }
+
+
+        [HttpPost]
+        [Route("resetpassword")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult> ResetPassword(ResetPasswordDto dto)
+        {
+            //implement password policy here min lenght
+
+            var result = await _authService.ResetPasswordAsync(dto);
+
+            if (!result.IsSuccess)
+            {
+                return result.Failure switch
+                {
+                    ResetFailure.UserNotFound => Problem(
+                        statusCode: StatusCodes.Status400BadRequest,
+                        title: "Invalid request",
+                        detail: "Invalid request sent"
+                        ),
+
+                    _ => Problem(
+                        statusCode: StatusCodes.Status400BadRequest,
+                        title: "Password reset failed",
+                        detail: string.Join(", ", result.Errors)
+                        )
+
+                };
+            }
+
+            return NoContent();
+        }
+
+
+        [HttpPost]
+        [Route("changepassword")]
+        [Authorize]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult> ChangePassword(ChangePasswordDto dto)
+        {
+            //implement password policy here min lenght
+
+            var email = User.FindFirstValue(ClaimTypes.Email)!;
+
+            var result = await _authService.ChangePasswordAsync(email, dto);
+
+            if (!result.IsSuccess)
+            {
+                return result.Failure switch
+                {
+                    PasswordChangeFailure.UserNotFound => Problem(
+                        statusCode: StatusCodes.Status400BadRequest,
+                        title: "Invalid request",
+                        detail: "Invalid request sent"
+                        ),
+
+                    _ => Problem(
+                        statusCode: StatusCodes.Status400BadRequest,
+                        title: "Password reset failed",
+                        detail: string.Join(", ", result.Errors)
+                        )
+
+                };
+            }
+
+            return NoContent();
+
         }
     }
 }

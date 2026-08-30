@@ -4,8 +4,7 @@ namespace RoleBasedAuthenticationApi.DTO.Auth
 {
     public class LoginDto
     {
-        [Required]
-        [EmailAddress]
+        [Required, EmailAddress]
         public string Email { get; init; }
 
         [Required]

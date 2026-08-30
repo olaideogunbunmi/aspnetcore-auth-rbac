@@ -1,4 +1,5 @@
 ﻿using RoleBasedAuthenticationApi.DTO.Auth;
+using RoleBasedAuthenticationApi.DTO.Password;
 using RoleBasedAuthenticationApi.DTO.Token;
 
 
@@ -10,5 +11,8 @@ namespace RoleBasedAuthenticationApi.Interfaces
         Task<LoginResult> LoginAsync(LoginDto dto);
         Task<RefreshTokenResult> RefreshTokenAsync(string token);
         Task LogoutAsync(string id);
+        Task<ForgotPasswordResult> ForgotPasswordAsync(ForgotPasswordDto dto);
+        Task<ResetPasswordResult> ResetPasswordAsync(ResetPasswordDto dto);
+        Task<ChangePasswordResult> ChangePasswordAsync(string email, ChangePasswordDto dto);
     }
 }

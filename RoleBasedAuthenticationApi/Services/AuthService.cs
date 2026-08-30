@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using RoleBasedAuthenticationApi.Data;
 using RoleBasedAuthenticationApi.DTO.Auth;
+using RoleBasedAuthenticationApi.DTO.Password;
 using RoleBasedAuthenticationApi.DTO.Token;
 using RoleBasedAuthenticationApi.Interfaces;
 using RoleBasedAuthenticationApi.Models;
@@ -339,16 +340,88 @@ namespace RoleBasedAuthenticationApi.Services
                 await _context.SaveChangesAsync();
             }
         }
-        public static void ForgotPassword()
+        public async Task<ForgotPasswordResult> ForgotPasswordAsync(ForgotPasswordDto dto)
         {
+            var user = await _userManager.FindByEmailAsync(dto.Email);
 
-        }
-        public static void ResetPassword()
-        {
+            if (user == null)
+            {
+                return new ForgotPasswordResult
+                {
+                    IsSuccess = false,
+                };
+            }
 
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+
+            return new ForgotPasswordResult
+            {
+                IsSuccess = true,
+                ResetToken = token
+            };
         }
-        public static void ChangePassword()
+
+
+        public async Task<ResetPasswordResult> ResetPasswordAsync(ResetPasswordDto dto)
         {
+            var user = await _userManager.FindByEmailAsync(dto.Email);
+
+            if (user == null)
+            {
+                return new ResetPasswordResult
+                {
+                    IsSuccess = false,
+                    Failure = ResetFailure.UserNotFound
+                };
+            }
+
+            var result = await _userManager.ResetPasswordAsync(user, dto.ResetToken, dto.NewPassword);
+
+            if (!result.Succeeded)
+            {
+                return new ResetPasswordResult
+                {
+                    IsSuccess = false,
+                    Errors = result.Errors.Select(e => e.Description).ToList()
+                };              
+            }
+
+            return new ResetPasswordResult
+            {
+                IsSuccess = true,
+
+            };
+        }
+
+
+        public async Task<ChangePasswordResult> ChangePasswordAsync(string email, ChangePasswordDto dto)
+        {
+            var user = await _userManager.FindByEmailAsync(email);
+
+            if (user == null)
+            {
+                return new ChangePasswordResult
+                {
+                    IsSuccess = false,
+                    Failure = PasswordChangeFailure.UserNotFound
+                };
+            }
+
+            var result = await _userManager.ChangePasswordAsync(user, dto.CurrentPassword, dto.NewPassword);
+
+            if (!result.Succeeded)
+            {
+                return new ChangePasswordResult
+                {
+                    IsSuccess = false,
+                    Errors = result.Errors.Select(e => e.Description).ToList()
+                };
+            }
+
+            return new ChangePasswordResult
+            {
+                IsSuccess = true
+            };
 
         }
         public static void VerifyEmail()
