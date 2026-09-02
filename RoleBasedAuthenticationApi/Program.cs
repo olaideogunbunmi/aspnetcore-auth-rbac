@@ -138,6 +138,18 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+
+    app.MapGet("/debug/endpoints", (IEnumerable<EndpointDataSource> endpointSources) =>
+    {
+        var endpoints = endpointSources.SelectMany(source => source.Endpoints);
+
+        return endpoints.Select(e => new
+        {
+            DisplayName = e.DisplayName,
+            RoutePattern = (e as RouteEndpoint)?.RoutePattern?.RawText,
+            Methods = e.Metadata.OfType<HttpMethodMetadata>().FirstOrDefault()?.HttpMethods
+        });
+    });
 }
 
 app.UseExceptionHandler();
@@ -145,6 +157,8 @@ app.UseExceptionHandler();
 app.UseStatusCodePages();
 
 app.UseHttpsRedirection();
+
+app.UseRouting();
 
 app.UseAuthentication();
 
