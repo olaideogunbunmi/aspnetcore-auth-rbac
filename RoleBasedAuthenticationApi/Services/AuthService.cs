@@ -22,14 +22,16 @@ namespace RoleBasedAuthenticationApi.Services
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly ApplicationDbContext _context;
         private readonly ILogger<AuthService> _logger;
+        private readonly IEmailServices _emailServices;
 
-        public AuthService(UserManager<ApplicationUser> userManager, IConfiguration configuration, SignInManager<ApplicationUser> signInManager, ApplicationDbContext context, ILogger<AuthService> logger)
+        public AuthService(UserManager<ApplicationUser> userManager, IConfiguration configuration, SignInManager<ApplicationUser> signInManager, ApplicationDbContext context, ILogger<AuthService> logger, IEmailServices emailServices)
         {
             _userManager = userManager;
             _configuration = configuration;
             _signInManager = signInManager;
             _context = context;
             _logger = logger;
+            _emailServices = emailServices;
         }
 
         public async Task<RegisterResult> RegisterAsync(RegisterDto dto)
@@ -340,25 +342,25 @@ namespace RoleBasedAuthenticationApi.Services
                 await _context.SaveChangesAsync();
             }
         }
-        public async Task<ForgotPasswordResult> ForgotPasswordAsync(ForgotPasswordDto dto)
+        public async Task ForgotPasswordAsync(ForgotPasswordDto dto)
         {
             var user = await _userManager.FindByEmailAsync(dto.Email);
 
             if (user == null)
             {
-                return new ForgotPasswordResult
-                {
-                    IsSuccess = false,
-                };
+                return;
             }
 
             var token = await _userManager.GeneratePasswordResetTokenAsync(user);
 
-            return new ForgotPasswordResult
+            try
             {
-                IsSuccess = true,
-                ResetToken = token
-            };
+                await _emailServices.SendPasswordResetEmailAsync(user.Email!, token);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send password reset email to user {UserId}", user.Id);
+            }
         }
 
 

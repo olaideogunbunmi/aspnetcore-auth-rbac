@@ -174,25 +174,12 @@ namespace RoleBasedAuthenticationApi.Controllers
 
         [HttpPost]
         [Route("forgotpassword")]
-        [ProducesResponseType(typeof(TokenResetDto), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<TokenResetDto>> ForgotPassword(ForgotPasswordDto dto)
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<ActionResult> ForgotPassword(ForgotPasswordDto dto)
         {
-            var result = await _authService.ForgotPasswordAsync(dto);
+            await _authService.ForgotPasswordAsync(dto);
 
-            if (!result.IsSuccess)
-            {
-                return Problem(
-                    statusCode: StatusCodes.Status400BadRequest,
-                    title: "Invalid request",
-                    detail: "User with this email does not exist"
-                    );
-            }
-
-            return Ok(new TokenResetDto 
-            { 
-                Token = result.ResetToken
-            });
+            return Ok(new {message = "If an account with this email exists, a password reset token has been sent." });
         }
 
 

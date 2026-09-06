@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using RoleBasedAuthenticationApi.Configuration;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -20,7 +21,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
         options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 
-
+//SMTP SETTING
+builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("Smtp"));
 
 
 //IDENTITY
@@ -33,8 +35,6 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 
         //designed for temporary lockout - after 10 minutes user can try again
         options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(10);
-
-
 
         options.Password.RequireDigit = true;
         options.Password.RequireLowercase = true;
@@ -106,6 +106,7 @@ builder.Services.AddControllers()
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IRoleService,RoleService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IEmailServices, EmailService>();
 
 
 
@@ -149,7 +150,7 @@ if (app.Environment.IsDevelopment())
             RoutePattern = (e as RouteEndpoint)?.RoutePattern?.RawText,
             Methods = e.Metadata.OfType<HttpMethodMetadata>().FirstOrDefault()?.HttpMethods
         });
-    });
+    }).AllowAnonymous();
 }
 
 app.UseExceptionHandler();
