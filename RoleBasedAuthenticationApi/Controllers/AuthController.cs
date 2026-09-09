@@ -177,6 +177,8 @@ namespace RoleBasedAuthenticationApi.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<ActionResult> ForgotPassword(ForgotPasswordDto dto)
         {
+            //implement password policy here min lenght
+
             await _authService.ForgotPasswordAsync(dto);
 
             return Ok(new {message = "If an account with this email exists, a password reset token has been sent." });
@@ -197,18 +199,23 @@ namespace RoleBasedAuthenticationApi.Controllers
             {
                 return result.Failure switch
                 {
-                    ResetFailure.UserNotFound => Problem(
+                    ResetFailure.InvalidTokenOrEmail => Problem(
                         statusCode: StatusCodes.Status400BadRequest,
                         title: "Invalid request",
-                        detail: "Invalid request sent"
+                        detail: "The reset token or email address is invalid"
                         ),
 
-                    _ => Problem(
-                        statusCode: StatusCodes.Status400BadRequest,
-                        title: "Password reset failed",
-                        detail: string.Join(", ", result.Errors)
-                        )
+                    ResetFailure.PasswordPolicyViolation => Problem(
+                    statusCode: StatusCodes.Status400BadRequest,
+                    title: "Password does not meet requirements",
+                    detail: string.Join(", ", result.Errors)
+                    ),
 
+                    _ => Problem(
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        title: "Unexpected error",
+                        detail: "An unexpected error occurred"
+                        )
                 };
             }
 

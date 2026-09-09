@@ -144,8 +144,6 @@ namespace RoleBasedAuthenticationApi.Services
         {
             string hashedToken = HashToken(rawToken);
 
-            //var token = await _context.RefreshTokens.FirstOrDefaultAsync(x => x.TokenHash == hashedToken && x.Revoked == false && DateTimeOffset.UtcNow < x.ExpiredAt);
-
             var token = await _context.RefreshTokens.FirstOrDefaultAsync(x => x.TokenHash == hashedToken);
 
             if (token == null)
@@ -159,7 +157,8 @@ namespace RoleBasedAuthenticationApi.Services
 
             if (token.Revoked)
             {
-                await RevokeAllUserRefreshTokensAsync(token.UserId, token.TokenHash);
+                //await RevokeAllUserRefreshTokensAsync(token.UserId, token.TokenHash);
+                await RevokeAllUserRefreshTokensAsync(token.UserId, $"Refresh token reuse detected. Token: {token.TokenHash}");
 
                 return new RefreshTokenResult
                 {
@@ -305,7 +304,7 @@ namespace RoleBasedAuthenticationApi.Services
             await _context.SaveChangesAsync();
         }
 
-        private async Task RevokeAllUserRefreshTokensAsync(string userId, string hashToken)
+        private async Task RevokeAllUserRefreshTokensAsync(string userId, string reason)
         {
             var tokens = await _context.RefreshTokens.Where(x => x.UserId == userId && !x.Revoked).ToListAsync();
 
@@ -321,7 +320,7 @@ namespace RoleBasedAuthenticationApi.Services
                 await _context.SaveChangesAsync();
             }
 
-            _logger.LogWarning("Revoked refresh token reuse detected. Token: {HashToken}, User: {UserId}", hashToken, userId);
+            _logger.LogWarning("All refresh tokens have been revoked: User: {UserId}, Reason: {Reason}", userId, reason);
         }
 
         public async Task LogoutAsync(string id)
@@ -373,7 +372,7 @@ namespace RoleBasedAuthenticationApi.Services
                 return new ResetPasswordResult
                 {
                     IsSuccess = false,
-                    Failure = ResetFailure.UserNotFound
+                    Failure = ResetFailure.InvalidTokenOrEmail
                 };
             }
 
@@ -381,17 +380,28 @@ namespace RoleBasedAuthenticationApi.Services
 
             if (!result.Succeeded)
             {
+                if (result.Errors.Any(e => e.Code == "InvalidToken"))
+                {
+                    return new ResetPasswordResult
+                    {
+                        IsSuccess = false,
+                        Failure = ResetFailure.InvalidTokenOrEmail
+                    };
+                }                
+
                 return new ResetPasswordResult
                 {
                     IsSuccess = false,
+                    Failure = ResetFailure.PasswordPolicyViolation,
                     Errors = result.Errors.Select(e => e.Description).ToList()
                 };              
             }
 
+            await RevokeAllUserRefreshTokensAsync(user.Id, "Password reset");
+
             return new ResetPasswordResult
             {
-                IsSuccess = true,
-
+                IsSuccess = true
             };
         }
 

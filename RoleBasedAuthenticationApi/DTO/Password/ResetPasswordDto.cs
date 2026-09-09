@@ -11,7 +11,13 @@ namespace RoleBasedAuthenticationApi.DTO.Password
         public string ResetToken { get; init; }
 
         [Required]
-        public string NewPassword { get; init; } 
+        [DataType(DataType.Password)]
+        public string NewPassword { get; init; }
+
+        [Required]
+        [DataType(DataType.Password)]
+        [Compare(nameof(NewPassword), ErrorMessage = "The password and confirmation password does not match")]
+        public string ConfirmPassword { get; init; }
     }
 
     public class ResetPasswordResult
@@ -23,6 +29,7 @@ namespace RoleBasedAuthenticationApi.DTO.Password
 
     public enum ResetFailure
     {
-        UserNotFound
+        InvalidTokenOrEmail,
+        PasswordPolicyViolation
     }
 }
