@@ -5,10 +5,17 @@ namespace RoleBasedAuthenticationApi.DTO.Password
     public class ChangePasswordDto
     {
         [Required]
+        [DataType(DataType.Password)]
         public string CurrentPassword { get; init; }
 
         [Required]
-        public string NewPassword { get; set; }
+        [DataType(DataType.Password)]
+        public string NewPassword { get; init; }
+
+        [Required]
+        [DataType(DataType.Password)]
+        [Compare(nameof(NewPassword))]
+        public string ConfirmPassword { get; init; }
     }
 
     public class ChangePasswordResult
@@ -20,6 +27,8 @@ namespace RoleBasedAuthenticationApi.DTO.Password
 
     public enum PasswordChangeFailure
     {
-        UserNotFound
+        InvalidUser,
+        IncorrectCurrentPassword,
+        PasswordPolicyViolation
     }
 }

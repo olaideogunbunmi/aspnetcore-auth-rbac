@@ -13,6 +13,6 @@ namespace RoleBasedAuthenticationApi.Interfaces
         Task LogoutAsync(string id);
         Task ForgotPasswordAsync(ForgotPasswordDto dto);
         Task<ResetPasswordResult> ResetPasswordAsync(ResetPasswordDto dto);
-        Task<ChangePasswordResult> ChangePasswordAsync(string email, ChangePasswordDto dto);
+        Task<ChangePasswordResult> ChangePasswordAsync(string id, ChangePasswordDto dto);
     }
 }

@@ -406,16 +406,16 @@ namespace RoleBasedAuthenticationApi.Services
         }
 
 
-        public async Task<ChangePasswordResult> ChangePasswordAsync(string email, ChangePasswordDto dto)
+        public async Task<ChangePasswordResult> ChangePasswordAsync(string id, ChangePasswordDto dto)
         {
-            var user = await _userManager.FindByEmailAsync(email);
+            var user = await _userManager.Users.FirstOrDefaultAsync(x => x.PublicId == id);
 
             if (user == null)
             {
                 return new ChangePasswordResult
                 {
                     IsSuccess = false,
-                    Failure = PasswordChangeFailure.UserNotFound
+                    Failure = PasswordChangeFailure.InvalidUser
                 };
             }
 
@@ -423,12 +423,24 @@ namespace RoleBasedAuthenticationApi.Services
 
             if (!result.Succeeded)
             {
+                if (result.Errors.Any(e => e.Code == "PasswordMismatch"))
+                {
+                    return new ChangePasswordResult
+                    {
+                        IsSuccess = false,
+                        Failure = PasswordChangeFailure.IncorrectCurrentPassword
+                    };
+                }
+
                 return new ChangePasswordResult
                 {
                     IsSuccess = false,
+                    Failure = PasswordChangeFailure.PasswordPolicyViolation,
                     Errors = result.Errors.Select(e => e.Description).ToList()
                 };
             }
+
+            await RevokeAllUserRefreshTokensAsync(user.Id, "Password change");
 
             return new ChangePasswordResult
             {

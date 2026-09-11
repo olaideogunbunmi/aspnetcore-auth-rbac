@@ -1,10 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.JsonWebTokens;
 using RoleBasedAuthenticationApi.DTO.Auth;
 using RoleBasedAuthenticationApi.DTO.Password;
 using RoleBasedAuthenticationApi.DTO.Token;
 using RoleBasedAuthenticationApi.Interfaces;
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
 
@@ -181,7 +181,7 @@ namespace RoleBasedAuthenticationApi.Controllers
 
             await _authService.ForgotPasswordAsync(dto);
 
-            return Ok(new {message = "If an account with this email exists, a password reset token has been sent." });
+            return Ok(new { message = "If an account with this email exists, a password reset token has been sent." });
         }
 
 
@@ -191,8 +191,6 @@ namespace RoleBasedAuthenticationApi.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult> ResetPassword(ResetPasswordDto dto)
         {
-            //implement password policy here min lenght
-
             var result = await _authService.ResetPasswordAsync(dto);
 
             if (!result.IsSuccess)
@@ -228,35 +226,43 @@ namespace RoleBasedAuthenticationApi.Controllers
         [Authorize]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult> ChangePassword(ChangePasswordDto dto)
         {
-            //implement password policy here min lenght
+            var id = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
 
-            var email = User.FindFirstValue(ClaimTypes.Email)!;
-
-            var result = await _authService.ChangePasswordAsync(email, dto);
+            var result = await _authService.ChangePasswordAsync(id!, dto);
 
             if (!result.IsSuccess)
             {
                 return result.Failure switch
                 {
-                    PasswordChangeFailure.UserNotFound => Problem(
+                    PasswordChangeFailure.InvalidUser => Problem(
                         statusCode: StatusCodes.Status400BadRequest,
                         title: "Invalid request",
-                        detail: "Invalid request sent"
+                        detail: "Unable to process this request"
+                        ),
+                    PasswordChangeFailure.IncorrectCurrentPassword => Problem(
+                        statusCode: StatusCodes.Status400BadRequest,
+                        title: "Incorrect password",
+                        detail: "The current password you entered is incorrect"
+                        ),
+
+                    PasswordChangeFailure.PasswordPolicyViolation => Problem(
+                        statusCode: StatusCodes.Status400BadRequest,
+                        title: "Password does not meet requirements",
+                        detail: string.Join(", ", result.Errors)
                         ),
 
                     _ => Problem(
-                        statusCode: StatusCodes.Status400BadRequest,
-                        title: "Password reset failed",
-                        detail: string.Join(", ", result.Errors)
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        title: "Unexpected error",
+                        detail: "An unexpected error occurred"
                         )
-
                 };
             }
 
             return NoContent();
-
         }
     }
 }

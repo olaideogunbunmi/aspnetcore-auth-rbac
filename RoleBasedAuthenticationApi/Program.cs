@@ -25,6 +25,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("Smtp"));
 
 
+
+
 //IDENTITY
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
     {
