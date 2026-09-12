@@ -341,6 +341,7 @@ namespace RoleBasedAuthenticationApi.Services
                 await _context.SaveChangesAsync();
             }
         }
+
         public async Task ForgotPasswordAsync(ForgotPasswordDto dto)
         {
             var user = await _userManager.FindByEmailAsync(dto.Email);
@@ -361,7 +362,6 @@ namespace RoleBasedAuthenticationApi.Services
                 _logger.LogError(ex, "Failed to send password reset email to user {UserId}", user.Id);
             }
         }
-
 
         public async Task<ResetPasswordResult> ResetPasswordAsync(ResetPasswordDto dto)
         {
@@ -404,7 +404,6 @@ namespace RoleBasedAuthenticationApi.Services
                 IsSuccess = true
             };
         }
-
 
         public async Task<ChangePasswordResult> ChangePasswordAsync(string id, ChangePasswordDto dto)
         {

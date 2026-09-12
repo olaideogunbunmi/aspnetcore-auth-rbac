@@ -32,9 +32,11 @@ namespace RoleBasedAuthenticationApi.Services
             message.To.Add(MailboxAddress.Parse(toEmail));
             message.Subject = "Password Reset Token";
 
-            message.Body = new TextPart("plain")
+            message.Body = new TextPart("html")
             {
-                Text = $"Use this token to reset your password: {token}\n\nSubmit it to /resetpassword endpoint along with your new password."
+                Text = $@"<p>Use this token to reset your password:</p> 
+                  <p><strong>{token}</strong></p>
+                  <p>Submit it to <code>/reset-password</code> endpoint along with your new password.</p>"
             };
 
             //Send using MailKit's production-ready SMTP client

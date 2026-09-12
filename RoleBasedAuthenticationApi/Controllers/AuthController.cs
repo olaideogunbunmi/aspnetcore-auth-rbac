@@ -173,7 +173,7 @@ namespace RoleBasedAuthenticationApi.Controllers
 
 
         [HttpPost]
-        [Route("forgotpassword")]
+        [Route("forgot-password")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<ActionResult> ForgotPassword(ForgotPasswordDto dto)
         {
@@ -186,7 +186,7 @@ namespace RoleBasedAuthenticationApi.Controllers
 
 
         [HttpPost]
-        [Route("resetpassword")]
+        [Route("reset-password")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult> ResetPassword(ResetPasswordDto dto)
@@ -222,7 +222,7 @@ namespace RoleBasedAuthenticationApi.Controllers
 
 
         [HttpPost]
-        [Route("changepassword")]
+        [Route("change-password")]
         [Authorize]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
