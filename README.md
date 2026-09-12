@@ -7,6 +7,11 @@ A RESTful Web API built with ASP.NET Core 8 and ASP.NET Core Identity that provi
 - Role Management - full CRUD for roles
 - Claims Management - assign/remove claims on users
 - JWT Access Token Generation
+- Logout
+- Forgot Password and Password Reset
+- Change Password
+- Email delivery for password reset using MailKit
+- Mailtrap Sandbox integration for testing password reset emails
 - Profile Endpoint - authenticated user profile retrieval
 - RFC 9457 Problem Details — standardized error responses across the API
 - Separation of Concerns - service layers, result objects and input and output DTOs
@@ -29,6 +34,8 @@ A RESTful Web API built with ASP.NET Core 8 and ASP.NET Core Identity that provi
 - Newtonsoft.Json / JSON Patch
 - Swagger/OpenAPI
 - SQL Server
+- MailKit for SMTP email delivery
+- Mailtrap for email testing and sandboxing
 - ASP.NET Core `ILogger` for logging
 
 ## Architecture and Design Decisions
@@ -52,15 +59,22 @@ This API follows a set of conventions applied consistently across the codebase.
 6. When the access token expires, the refresh token can be used to obtain a new access token.
 7. Refresh token rotation replaces the previous refresh token.
 8. Revoked or reused refresh tokens are rejected.
+9. A user can log out, which revokes their refresh tokens.
+10. A user who forgets their password can request a password reset.
+11. The API generates a password reset token and sends a password reset email using MailKit.
+12. During development, Mailtrap provides a sandbox for receiving and inspecting password reset emails.
+13. The user can use the reset token to set a new password.
+14. An authenticated user can change their password through the change-password endpoint.
 
 ## Getting Started
 
 ### Prerequisites
-Before running the project, ensure that you have the following installed:
+Before running the project, ensure that you have the following installed or available:
 - .NET 8 SDK
 - SQL Server
 - Git
 - An API testing tool such as Postman
+- A Mailtrap account for testing password reset emails
 
 
 ### Installation
@@ -90,12 +104,18 @@ Sensitive values include:
 ### Required Settings
 The following configuration settings are required for the application to run correctly:
 
-| Key | Description | Where to set it
+| Key | Description | Where to set it |
 | :--- | :----------- | :-------------- |
 | `JWT:Issuer` | Token Issuer URL | `appsettings.json` |
-| `JWT:Audience` | Token Audience URL | `appsettings.json`
+| `JWT:Audience` | Token Audience URL | `appsettings.json` |
 | `JWT:Key` | Secret key used to sign tokens. Minimum of 32 chars | `User Secrets` |
 | `ConnectionStrings:DefaultConnection` | SQL Server connection string | `appsettings.Development.json` or `User Secrets` |
+| `Smtp:Host` | SMTP server host | `User Secrets` |
+| `Smtp:Port` | SMTP server port | `User Secrets` |
+| `Smtp:Username` | SMTP username | `User Secrets` |
+| `Smtp:Password` | SMTP password | `User Secrets` |
+| `Smtp:FromAddress` | Sender email address | `appsettings.json` |
+| `Smtp:FromName` | Sender display name | `appsettings.json` |
 
 
 #### Option A: Using .NET User Secrets (Recommended)
@@ -148,18 +168,70 @@ dotnet ef database update
 dotnet run
 ```
 
+### Email Configuration
+The application uses MailKit to send password reset emails. During development,
+Mailtrap is used as a sandbox email service to capture and inspect outgoing
+emails without sending them to real users.
+
+Mailtrap credentials are stored securely using ASP.NET Core User Secrets and
+are not committed to source control.
+
+SMTP server settings such as the sender address and sender name can be configured in appsettings.json. Mailtrap credentials -  host, port, username and password should be stored securely using ASP.NET Core User Secrets.
+
+
+- Mail server host
+- Mail server port
+- Mail username
+- Mail password
+- Sender email address
+- Sender email name
+
+  1. `appsettings.json` configuration
+ 
+  ``` json
+  "Smtp": {
+    "FromAddress": "YOUR_EMAIL_ADDRESS",
+    "FromName": "YOUR_DISPLAY_NAME"
+  }
+``
+
+2. `secrets.json` configuration
+
+``` json
+ "Smtp": {
+    "Host": "YOUR_MAILTRAP_HOST",
+    "Port": "YOUR_MAILTRAP_PORT",
+    "Username": "YOUR_MAILTRAP_USERNAME",
+    "Password": "YOUR_MAILTRAP_PASSWORD"
+  }
+```
+
+Store the Mailtrap credentials using User Secrets:
+
+``` bash
+dotnet user-secrets set "Smtp:Host" "YOUR_MAILTRAP_HOST"
+dotnet user-secrets set "Smtp:Port" "YOUR_MAILTRAP_PORT"
+dotnet user-secrets set "Smtp:Username" "YOUR_MAILTRAP_USERNAME"
+dotnet user-secrets set "Smtp:Password" "YOUR_MAILTRAP_PASSWORD"
+```
+
+You can obtain the SMTP host, port, username, and password from your Mailtrap account.
+
 The API will be available at the port configured in `launchSettings.json`. Once running, Swagger UI is available at `https://localhost:{port}/swagger` for exploring and testing the endpoints directly in the browser.
 
 ## API Overview
 
-| Resource                 | Description                          |
-|------------------------- |--------------------------------------|
-| `/api/auth`              | Registration, login, token issuance  |
+| Resource                   | Description                          |
+|-------------------------   |--------------------------------------|
+| `/api/auth`                | Registration, login, logout, token issuance |
+| `api/auth/forgot-password` | Request a password reset                    |
+| `api/auth/reset-password`  | Reset password using a reset token through email | 
+| `api/auth/change-password` | Change password for authenticated users |
+| `api/auth/refresh`         | Refresh access token               |
 | `/api/users`             | User CRUD, enable/disable            |
 | `/api/users/{id}/claims` | Claims management                    |
 | `/api/roles`             | Role CRUD                            |
 | `/api/profile`           | Authenticated user's own profile     |
-| `/api/auth/refresh`      | Authentication token refresh         |
 
 
 ## Project Structure
