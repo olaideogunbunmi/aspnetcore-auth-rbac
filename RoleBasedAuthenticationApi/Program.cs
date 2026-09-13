@@ -61,6 +61,7 @@ builder.Services.AddAuthentication(option =>
 {
     option.RequireHttpsMetadata = false;
     option.SaveToken = true;
+    option.MapInboundClaims = false; // disable mapping wtRegisteredClaimNames.Sub to ClaimTypes.NameIdentifier url
     option.TokenValidationParameters = new TokenValidationParameters()
     {
         ValidateIssuerSigningKey = true,

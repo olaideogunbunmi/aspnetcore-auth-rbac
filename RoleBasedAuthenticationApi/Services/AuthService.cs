@@ -231,8 +231,9 @@ namespace RoleBasedAuthenticationApi.Services
 
                 //prevent tokens having same payload and signature - though nearly impossble for same signature to be generated
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim(ClaimTypes.Email, user.Email!),
-                new Claim(ClaimTypes.Name, user.FullName),
+                new Claim(JwtRegisteredClaimNames.Email, user.Email!),
+                new Claim(JwtRegisteredClaimNames.Name, user.FullName!)
+
             };
 
             foreach (var role in roles)

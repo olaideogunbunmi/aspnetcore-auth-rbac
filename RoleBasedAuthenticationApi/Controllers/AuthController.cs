@@ -164,7 +164,7 @@ namespace RoleBasedAuthenticationApi.Controllers
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult> Logout()
         {
-            var id = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var id = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
 
             await _authService.LogoutAsync(id!);
 
@@ -229,7 +229,7 @@ namespace RoleBasedAuthenticationApi.Controllers
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult> ChangePassword(ChangePasswordDto dto)
         {
-            var id = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var id = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
 
             var result = await _authService.ChangePasswordAsync(id!, dto);
 
