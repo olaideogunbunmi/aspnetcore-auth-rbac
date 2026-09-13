@@ -144,7 +144,7 @@ dotnet user-secrets set "JWT:Key" "generate-a-very-long-random-key-here"
 dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=YOUR_SQL_SERVER_INSTANCE;Database=RoleBasedAuthenticationDB;Trusted_Connection=True;TrustServerCertificate=True;"
 ```
 
-### Option B: Using appsettings.Development.json for local development (Quick Setup)
+#### Option B: Using `appsettings.Development.json` for local development (Quick Setup)
 
 If you prefer not to use User Secrets, you can configure your connection string directly into the configuration file.
 
@@ -154,8 +154,8 @@ If you prefer not to use User Secrets, you can configure your connection string 
         "DefaultConnection": "Server=YOUR_SQL_SERVER_INSTANCE;Database=RoleBasedAuthenticationDB;Trusted_Connection=True;TrustServerCertificate=True;"
     }
 ```
-For JWT key configuration:
-2. Locate `JWT` section and replace the placeholder below with your actual secret key
+2. For JWT key configuration:
+Locate `JWT` section and replace the placeholder below with your actual secret key
 ``` json
 "JWT": {
     "Key": "YOUR_SECRET_KEY"
@@ -190,9 +190,7 @@ Mailtrap SMTP host, port, username and password are stored securely using ASP.NE
     "FromName": "YOUR_DISPLAY_NAME"
   }
 ```
-2. User Secrets
-
-Store the Mailtrap SMTP connection settings and credentials using User Secrets:
+2. User Secrets: Store the Mailtrap SMTP connection settings and credentials using User Secrets:
 ``` bash
 dotnet user-secrets set "Smtp:Host" "YOUR_MAILTRAP_HOST"
 dotnet user-secrets set "Smtp:Port" "YOUR_MAILTRAP_PORT"
