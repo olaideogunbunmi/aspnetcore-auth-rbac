@@ -1,5 +1,4 @@
 ﻿using RoleBasedAuthenticationApi.DTO.Claim;
-using RoleBasedAuthenticationApi.DTO.Profile;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.JsonWebTokens;
@@ -13,32 +12,18 @@ namespace RoleBasedAuthenticationApi.Controllers
     public class ProfileController : ControllerBase
     {
         [HttpGet]
-        public ActionResult<UserProfileDto> GetProfile()
+        public ActionResult<IEnumerable<UserClaimDto>> GetProfile()
         {
-            var id = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
-            var email = User.FindFirstValue(claimType: ClaimTypes.Email)!;
-            var name = User.FindFirstValue(claimType: ClaimTypes.Name)!;         
-            var role = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+            //var id = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            //var email = User.FindFirstValue(JwtRegisteredClaimNames.Email)!;
+            //var name = User.FindFirstValue(JwtRegisteredClaimNames.Name)!;
+            //var role = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-            var standardClaimType = new HashSet<string>
-            {
-                JwtRegisteredClaimNames.Sub,
-                ClaimTypes.Email,
-                ClaimTypes.Name,
-                ClaimTypes.Role
-            };
-
-            var customClaims = User.Claims.Where(c => !standardClaimType.Contains(c.Type)).Select(c => new UserClaimDto { Type = c.Type, Value = c.Value }).ToList();
+            var customClaims = User.Claims.Select(c => new UserClaimDto { Type = c.Type, Value = c.Value }).ToList();
 
 
-            return Ok(new UserProfileDto
-            {
-                Id = id,
-                Email = email,
-                Name = name,
-                Role = role,
-                CustomClaims = customClaims,
-            });
+            return Ok(customClaims);
+
 
             //This endpoint reflects the token snapshot at login time — not the current database state. If an admin updates the user's role after they logged in, this endpoint still returns the old role until the user logs out and gets a fresh token.
         }
