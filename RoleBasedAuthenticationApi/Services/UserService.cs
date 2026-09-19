@@ -7,12 +7,14 @@ using RoleBasedAuthenticationApi.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using RoleBasedAuthenticationApi.Data;
 
 
 namespace RoleBasedAuthenticationApi.Services
 {
     public class UserService : IUserService
     {
+        private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly IMapper _mapper;
@@ -338,7 +340,6 @@ namespace RoleBasedAuthenticationApi.Services
                 };
             }
 
-            // it invalidates any previously issued JWT tokens 
             var stampResult = await _userManager.UpdateSecurityStampAsync(user);
 
             if (!stampResult.Succeeded)
@@ -349,6 +350,8 @@ namespace RoleBasedAuthenticationApi.Services
                     Errors = stampResult.Errors.Select(e => e.Description).ToList()
                 };
             }
+
+            await RevokeRefreshTokenOnDisable(user.Id);
 
             return new LockedUserResult
             {
@@ -407,6 +410,24 @@ namespace RoleBasedAuthenticationApi.Services
             {
                 IsSuccess = true
             };
+        }
+
+        private async Task RevokeRefreshTokenOnDisable(string id)
+        {
+            var userTokens = await _context.RefreshTokens.Where(x => x.UserId == id && !x.Revoked).ToListAsync();
+
+            if (userTokens.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var token in userTokens)
+            {
+                token.Revoked = true;
+                token.RevokedAt = DateTimeOffset.UtcNow;
+            }
+
+            await _context.SaveChangesAsync();
         }
     }
 }

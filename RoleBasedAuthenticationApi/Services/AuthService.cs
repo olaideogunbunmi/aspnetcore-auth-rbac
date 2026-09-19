@@ -258,7 +258,7 @@ namespace RoleBasedAuthenticationApi.Services
                 Subject = new ClaimsIdentity(claims),
                 IssuedAt = DateTime.UtcNow,
                 NotBefore = DateTime.UtcNow,
-                Expires = DateTime.UtcNow.AddMinutes(20),
+                Expires = DateTime.UtcNow.AddMinutes(5),
                 SigningCredentials = credentials
             };
 
