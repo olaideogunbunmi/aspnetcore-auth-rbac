@@ -8,6 +8,7 @@ using RoleBasedAuthenticationApi.Data;
 using RoleBasedAuthenticationApi.Interfaces;
 using RoleBasedAuthenticationApi.Models;
 using RoleBasedAuthenticationApi.Services;
+using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 
 
@@ -83,7 +84,7 @@ builder.Services.AddAuthentication(option =>
 {
     option.RequireHttpsMetadata = false;
     option.SaveToken = true;
-    option.MapInboundClaims = false; // disable mapping wtRegisteredClaimNames.Sub to ClaimTypes.NameIdentifier url
+    option.MapInboundClaims = false; // disable mapping jwtRegisteredClaimNames.Sub to ClaimTypes.NameIdentifier url
     option.TokenValidationParameters = new TokenValidationParameters()
     {      
         //no extra 5 minutes time added to token lifespan after creation
@@ -102,7 +103,13 @@ builder.Services.AddAuthentication(option =>
         ValidAudience = jwtSettings.Audience,
 
 
-        ValidateLifetime = true
+        ValidateLifetime = true,
+
+
+        // Match role/name claim types to what's actually in the token ("role"/"name"),
+        // since MapInboundClaims = false stops ASP.NET Core reverting them to its long-URI defaults
+        RoleClaimType = "role",
+        NameClaimType = JwtRegisteredClaimNames.Name
     };
 });
 
