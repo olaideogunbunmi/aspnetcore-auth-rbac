@@ -146,7 +146,7 @@ dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=YOUR_SQL_S
 
 #### Option B: Using `appsettings.Development.json` for local development (Quick Setup)
 
-If you prefer not to use User Secrets, you can configure your connection string directly into the configuration file.
+If you prefer not to use User Secrets, you can configure your connection string directly in the configuration file.
 
 1. Open `appsettings.Development.json`, locate the `ConnectionStrings` section, replace the placeholder with your local database details
 ``` json
@@ -155,7 +155,7 @@ If you prefer not to use User Secrets, you can configure your connection string 
     }
 ```
 2. For JWT key configuration:
-Locate `JWT` section and replace the placeholder below with your actual secret key
+Locate the `JWT` section and replace the placeholder below with your actual secret key
 ``` json
 "JWT": {
     "Key": "YOUR_SECRET_KEY"
@@ -200,7 +200,7 @@ dotnet user-secrets set "Smtp:Password" "YOUR_MAILTRAP_PASSWORD"
 
 You can obtain the SMTP host, port, username, and password from your Mailtrap account.
 
-The API will be available at the URL (port) configured in `launchSettings.json`. Once running, Swagger UI is available at `https://localhost:{port}/swagger` for exploring and testing the endpoints directly in the browser.
+The API will be available at the URL configured in `launchSettings.json`. Once running, Swagger UI is available at `https://localhost:{port}/swagger` for exploring and testing the endpoints directly in the browser.
 
 ## API Overview
 

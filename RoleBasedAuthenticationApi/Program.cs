@@ -1,14 +1,14 @@
-using RoleBasedAuthenticationApi.Data;
-using RoleBasedAuthenticationApi.Interfaces;
-using RoleBasedAuthenticationApi.Models;
-using RoleBasedAuthenticationApi.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using System.Text;
 using RoleBasedAuthenticationApi.Configuration;
+using RoleBasedAuthenticationApi.Data;
+using RoleBasedAuthenticationApi.Interfaces;
+using RoleBasedAuthenticationApi.Models;
+using RoleBasedAuthenticationApi.Services;
+using System.Text;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,6 +23,28 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 //SMTP SETTING
 builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("Smtp"));
+
+
+
+
+
+//JWTSETTINGS
+
+//Register IOptions injection accross app and bind JWTSettings and JWT
+builder.Services.AddOptions<JWTSettings>()
+    .Bind(builder.Configuration.GetSection("JWT"))
+    .ValidateDataAnnotations()
+    .ValidateOnStart(); // App crashes immediately on startup if Key, Issuer, or Audience are missing
+
+
+//Bind locally for Program.cs setup independently
+var jwtSettings = builder.Configuration.GetSection("JWT").Get<JWTSettings>();
+
+if (jwtSettings == null || string.IsNullOrWhiteSpace(jwtSettings.Key) || string.IsNullOrWhiteSpace(jwtSettings.Issuer) || string.IsNullOrWhiteSpace(jwtSettings.Audience))
+{
+    throw new InvalidOperationException("JWT configuration section is missing or invalid");
+}
+
 
 
 
@@ -63,18 +85,24 @@ builder.Services.AddAuthentication(option =>
     option.SaveToken = true;
     option.MapInboundClaims = false; // disable mapping wtRegisteredClaimNames.Sub to ClaimTypes.NameIdentifier url
     option.TokenValidationParameters = new TokenValidationParameters()
-    {
-        ValidateIssuerSigningKey = true,
-        ValidateLifetime = true,
-
+    {      
         //no extra 5 minutes time added to token lifespan after creation
         ClockSkew = TimeSpan.Zero, //or TimeSpan.FromSeconds(0)
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JWT:Key"]!)),
-        ValidateIssuer = true,
-        ValidateAudience = true,
 
-        ValidIssuer = builder.Configuration["JWT:Issuer"],
-        ValidAudience = builder.Configuration["JWT:Audience"]
+
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Key)),       
+       
+
+        ValidateIssuer = true,
+        ValidIssuer = jwtSettings.Issuer,
+
+
+        ValidateAudience = true,
+        ValidAudience = jwtSettings.Audience,
+
+
+        ValidateLifetime = true
     };
 });
 

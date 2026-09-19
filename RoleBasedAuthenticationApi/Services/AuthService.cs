@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using RoleBasedAuthenticationApi.Configuration;
 using RoleBasedAuthenticationApi.Data;
 using RoleBasedAuthenticationApi.DTO.Auth;
 using RoleBasedAuthenticationApi.DTO.Password;
@@ -18,20 +20,20 @@ namespace RoleBasedAuthenticationApi.Services
     public class AuthService : IAuthService
     {
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly IConfiguration _configuration;
+        private readonly JWTSettings _jwtSettings;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly ApplicationDbContext _context;
         private readonly ILogger<AuthService> _logger;
         private readonly IEmailServices _emailServices;
 
-        public AuthService(UserManager<ApplicationUser> userManager, IConfiguration configuration, SignInManager<ApplicationUser> signInManager, ApplicationDbContext context, ILogger<AuthService> logger, IEmailServices emailServices)
+        public AuthService(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, ApplicationDbContext context, ILogger<AuthService> logger, IEmailServices emailServices, IOptions<JWTSettings> jwtSettings)
         {
             _userManager = userManager;
-            _configuration = configuration;
             _signInManager = signInManager;
             _context = context;
             _logger = logger;
             _emailServices = emailServices;
+            _jwtSettings = jwtSettings.Value;
         }
 
         public async Task<RegisterResult> RegisterAsync(RegisterDto dto)
@@ -218,7 +220,7 @@ namespace RoleBasedAuthenticationApi.Services
 
         private async Task<string> GenerateJwtToken(ApplicationUser user)
         {
-            var signInKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Key"]!));
+            var signInKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Key));
 
             var credentials = new SigningCredentials(signInKey, SecurityAlgorithms.HmacSha256);
 
@@ -230,6 +232,7 @@ namespace RoleBasedAuthenticationApi.Services
                 //new Claim(ClaimTypes.NameIdentifier, user.PublicId.ToString()), //for .NET
 
                 //prevent tokens having same payload and signature - though nearly impossble for same signature to be generated
+
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email!),
                 new Claim(JwtRegisteredClaimNames.Name, user.FullName!)
@@ -250,8 +253,8 @@ namespace RoleBasedAuthenticationApi.Services
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Issuer = _configuration["JWT:Issuer"],
-                Audience = _configuration["JWT:Audience"],
+                Issuer = _jwtSettings.Issuer,
+                Audience = _jwtSettings.Audience,
                 Subject = new ClaimsIdentity(claims),
                 IssuedAt = DateTime.UtcNow,
                 NotBefore = DateTime.UtcNow,
