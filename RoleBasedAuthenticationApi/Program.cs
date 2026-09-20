@@ -140,12 +140,11 @@ builder.Services.AddControllers()
     });
 
 
-//DEPENDENCY INJECTION
+//APP LIFETIME DEPENDENCY INJECTION
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IRoleService,RoleService>();
 builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<IEmailServices, EmailService>();
-
+builder.Services.AddSingleton<IEmailServices, EmailService>();
 
 
 
