@@ -18,11 +18,12 @@ namespace RoleBasedAuthenticationApi.Services
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly IMapper _mapper;
-        public UserService(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager, IMapper mapper)
+        public UserService(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager, IMapper mapper, ApplicationDbContext context)
         {
             _userManager = userManager;
             _roleManager = roleManager;
             _mapper = mapper;
+            _context = context;
         }
 
         public async Task<List<UserDetailsDto>> GetUsersAsync()
@@ -351,7 +352,7 @@ namespace RoleBasedAuthenticationApi.Services
                 };
             }
 
-            await RevokeRefreshTokenOnDisable(user.Id);
+            await RevokeRefreshTokenOnDisable(user.Id.ToString());
 
             return new LockedUserResult
             {
@@ -428,6 +429,9 @@ namespace RoleBasedAuthenticationApi.Services
             }
 
             await _context.SaveChangesAsync();
+
+
+           
         }
     }
 }
