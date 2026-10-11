@@ -29,8 +29,8 @@ namespace RoleBasedAuthenticationApi.Controllers
             //var name = User.FindFirstValue(JwtRegisteredClaimNames.Name)!;
             //var role = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-
-            var claims = User.Claims.Where(c => !excludedClaims.Contains(c.Type)).Select(c => new UserClaimDto { Type = c.Type, Value = c.Value}).ToList();
+            var claims = HttpContext.User.Claims.Where(c => !excludedClaims.Contains(c.Type)).Select(c => new UserClaimDto { Type = c.Type, Value = c.Value }).ToList();
+            //var claims = User.Claims.Where(c => !excludedClaims.Contains(c.Type)).Select(c => new UserClaimDto { Type = c.Type, Value = c.Value}).ToList();
 
             return Ok(claims);
 
